@@ -1,5 +1,8 @@
 from dataclasses import dataclass
+from typing import Union
+
 
 @dataclass
 class DefaultValues:
-    pattern: str = ""
+    pattern: tuple = ()
+    sleep: Union[int, bool] = 60
