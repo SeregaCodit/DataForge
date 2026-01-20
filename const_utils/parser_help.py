@@ -13,3 +13,4 @@ class HelpStrings:
         " directory"
     )
     step_sec: str = "time interval in seconds between each step"
+    type: str = "destination type of file"
