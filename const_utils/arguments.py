@@ -10,3 +10,5 @@ class Arguments:
     r: str = "-r"
     sleep: str = "--sleep"
     s: str = "-s"
+    step_sec: str = "--step_sec"
+    step: str = "-step"
