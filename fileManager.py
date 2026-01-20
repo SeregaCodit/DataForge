@@ -27,6 +27,7 @@ class FileManager:
         slice_parser.add_argument(arg.src, help=hs.src)
         slice_parser.add_argument(arg.dst, help=hs.dst)
         slice_parser.add_argument(arg.pattern, arg.p, help=hs.pattern, nargs="+", default=[defaults.pattern])
+        slice_parser.add_argument(arg.type, arg.t, help=hs.type, default=defaults.type)
         slice_parser.add_argument(arg.step_sec, arg.step, help=hs.step_sec, default=1)
         slice_parser.add_argument(arg.repeat, arg.r, help=hs.repeat, action='store_true')
         slice_parser.add_argument(arg.sleep, arg.s, help=hs.sleep, default=defaults.sleep)
@@ -45,25 +46,27 @@ if __name__ == "__main__":
     import sys
 
     # Емулюємо введення в терміналі:
-    sys.argv = [
-        "fileManager.py",
-        "slice",
-        "/home/pivden/PycharmProjects/FileManager/media/",
-        "/home/pivden/PycharmProjects/FileManager/media/imgs/",
-        "-p", ".mp4",
-        "-r",
-        "-s", "60",
-        "-step", "1",
-    ]
+    # sys.argv = [
+    #     "fileManager.py",
+    #     "slice",
+    #     "./media/",
+    #     "./media/imgs/",
+    #     "-p", ".mp4", ".MP4",
+    #     "-t", ".jpg",
+    #     "-r",
+    #     "-s", "60",
+    #     "-step", "5",
+    # ]
 
 
     # sys.argv = [
     #     "fileManager.py",
     #     "move",
-    #     "/mnt/qnap/Staff/Naumenko/delta_attachments",
-    #     "/home/pivden/Downloads/",
-    #     "-p", ".zip",
-    #     "-r", "True"
+    #     "./media/imgs/",
+    #     "./media/imgs_new/",
+    #     "-p", ".jpg",
+    #     "-r",
+    #     "-s", "30"
     # ]
     app = FileManager()
     app.execute()
