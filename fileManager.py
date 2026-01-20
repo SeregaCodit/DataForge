@@ -4,6 +4,7 @@ from const_utils.commands import Commands as cmd
 from const_utils.arguments import Arguments as arg
 from const_utils.default_values import DefaultValues as defaults
 from file_operations.move import MoveOperation
+from file_operations.slice import SliceOperation
 
 
 class FileManager:
@@ -17,10 +18,19 @@ class FileManager:
         move_parser = self.subparsers.add_parser(cmd.move, help=hs.move)
         move_parser.add_argument(arg.src, help=hs.src)
         move_parser.add_argument(arg.dst, help=hs.dst)
-        move_parser.add_argument(arg.pattern, arg.p, help=hs.pattern, nargs="+", default=[defaults.pattern], )
+        move_parser.add_argument(arg.pattern, arg.p, help=hs.pattern, nargs="+", default=[defaults.pattern])
         move_parser.add_argument(arg.repeat, arg.r, help=hs.repeat, action='store_true')
         move_parser.add_argument(arg.sleep, arg.s, help=hs.sleep, default=defaults.sleep)
         move_parser.set_defaults(cls=MoveOperation)
+
+        slice_parser = self.subparsers.add_parser(cmd.slice)
+        slice_parser.add_argument(arg.src, help=hs.src)
+        slice_parser.add_argument(arg.dst, help=hs.dst)
+        slice_parser.add_argument(arg.pattern, arg.p, help=hs.pattern, nargs="+", default=[defaults.pattern])
+        slice_parser.add_argument(arg.step_sec, arg.step, help=hs.step_sec, default=1)
+        slice_parser.add_argument(arg.repeat, arg.r, help=hs.repeat, action='store_true')
+        slice_parser.add_argument(arg.sleep, arg.s, help=hs.sleep, default=defaults.sleep)
+        slice_parser.set_defaults(cls=SliceOperation)
 
     def execute(self):
         args = self.parser.parse_args()
@@ -35,14 +45,16 @@ if __name__ == "__main__":
     import sys
 
     # Емулюємо введення в терміналі:
-    # sys.argv = [
-    #     "fileManager.py",
-    #     "move",
-    #     "/home/pivden/Downloads/",
-    #     "/mnt/qnap/Staff/Naumenko/delta_attachments",
-    #     "-p", "MissionPlanner-latest(",
-    #     "-r", "True"
-    # ]
+    sys.argv = [
+        "fileManager.py",
+        "slice",
+        "/home/pivden/PycharmProjects/FileManager/media/",
+        "/home/pivden/PycharmProjects/FileManager/media/imgs/",
+        "-p", ".mp4",
+        "-r",
+        "-s", "60",
+        "-step", "1",
+    ]
 
 
     # sys.argv = [
