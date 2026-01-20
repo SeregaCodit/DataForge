@@ -12,3 +12,5 @@ class Arguments:
     s: str = "-s"
     step_sec: str = "--step_sec"
     step: str = "-step"
+    type: str = "--type"
+    t: str = "-t"
