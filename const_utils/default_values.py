@@ -6,3 +6,4 @@ from typing import Union
 class DefaultValues:
     pattern: tuple = ()
     sleep: Union[int, bool] = 60
+    type: str = ".jpg"
