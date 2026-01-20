@@ -8,7 +8,7 @@ class MoveOperation(FileOperation):
             # Переміщуємо тільки файли, ігноруємо папку призначення, якщо вона всередині джерела
             if file_path.is_file() and file_path.parent.resolve() != self.target_directory.resolve():
                 target_file_path = self.target_directory / file_path.name
-                print(f"Moving: {file_path} -> {self.target_directory}", end=" ", flush=True)
+                print(f"[{self.__class__.__name__}]: {file_path} -> {self.target_directory}", end=" ", flush=True)
 
                 try:
                     # shutil.move приймає Path об'єкти напряму
