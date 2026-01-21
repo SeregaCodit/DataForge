@@ -5,6 +5,7 @@ from const_utils.default_values import DefaultValues as defaults
 class HelpStrings:
     """Help strings for commands and arguments"""
     move: str = "move files from source directory to target directory"
+    slice: str = "slice video files to images from the source directory to the target directory"
     src: str = "source directory"
     dst: str = "destination directory"
     pattern: str = r"Default - " + str(defaults.pattern) + ". Do actions only with files that match pattern"
