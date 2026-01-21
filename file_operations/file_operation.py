@@ -5,6 +5,7 @@ from typing import Tuple, Union
 
 
 class FileOperation(ABC):
+    """Abstract class for file operations"""
     def __init__(self, **kwargs):
         self.sleep: float = kwargs.get('sleep', 60)
         self.repeat: bool = kwargs.get('repeat', False)
@@ -20,27 +21,31 @@ class FileOperation(ABC):
         self.target_directory = Path(self.dst)
         self.stop: bool = False
 
-    def get_files(self):
-        # Використовуємо rglob, якщо треба шукати і в підпапках, або glob для поточної
+    def get_files(self) -> None:
+        """Get files from source directory that match a set of patterns"""
         files = set()
+
         for p in self.pattern:
-            # Шукаємо за кожним патерном
             current_pattern_files = self.source_directory.glob(f"*{p}*")
             files.update(current_pattern_files)
 
         self.files_for_task = tuple(files)
 
     def check_source_directory(self) -> None:
+        """Check if source directory is valid"""
         if not self.source_directory.exists():
             print(f"[ERROR] Source path '{self.src}' does not exist.")
             raise FileNotFoundError
 
     def check_directories(self) -> None:
+        """Check if source directory is valid and if target directory exists.
+        If target directory does not exist - create it."""
         self.check_source_directory()
         self.target_directory.mkdir(parents=True, exist_ok=True)
 
 
-    def run(self):
+    def run(self) -> None:
+        """Run the file operation"""
         self.check_directories()
         while True:
             try:
@@ -63,6 +68,7 @@ class FileOperation(ABC):
 
     @abstractmethod
     def do_task(self):
+        """Abstract method to do a task of a file operation"""
         pass
 
     @property
