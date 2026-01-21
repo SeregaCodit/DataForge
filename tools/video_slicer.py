@@ -3,6 +3,7 @@ from pathlib import Path
 import cv2
 
 class VideoSlicer:
+    """slicing video file and saving it to target directory"""
     @staticmethod
     def slice(source_file: Path, target_dir: Path, suffix: str = ".jpg", step: float = 1):
         cap = cv2.VideoCapture(str(source_file))
