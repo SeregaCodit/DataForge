@@ -65,18 +65,18 @@ if __name__ == "__main__":
     # ]
 
     #-----SLICE WITH DELETING-----
-    sys.argv = [
-        "fileManager.py",
-        "slice",
-        "./media/imgs/",
-        "./media/imgs/",
-        "-p", ".mp4", ".MP4",
-        "-t", ".jpg",
-        # "-r",
-        "-rm",
-        "-s", "60",
-        "-step", "1",
-    ]
+    # sys.argv = [
+    #     "fileManager.py",
+    #     "slice",
+    #     "./media/imgs/",
+    #     "./media/imgs/",
+    #     "-p", ".mp4", ".MP4",
+    #     "-t", ".jpg",
+    #     # "-r",
+    #     "-rm",
+    #     "-s", "60",
+    #     "-step", "1",
+    # ]
 
     # #-----MOVE-----
     # sys.argv = [
