@@ -10,7 +10,8 @@ if you don’t want the command works in a cycle, just don't use "-r" argument. 
 
 ## Available commands
 - **move** - move files from source directory to target directory
-- **slice** - slice video files to images from the source directory to the target directory
+- **slice** - slice video files to images from the source directory to the target directory. Also, you can set flag "--remove" or "-rm" for deleting a source video file after slicing
+- **delete** - "delete files that match patterns from source directory"
 ## How to use:
 clone git repository:
 
