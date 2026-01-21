@@ -1,16 +1,15 @@
 from const_utils.default_values import DefaultValues
+from const_utils.parser_help import HelpStrings
 from file_operations.file_operation import FileOperation
 from tools.video_slicer import VideoSlicer
 
 
 class SliceOperation(FileOperation):
+    """Slice the files that match a pattern from source directory to target directory"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.step_sec: float = kwargs.get('step_sec', 1)
-        self.suffix: str = kwargs.get('type', '.jpg')
-        # self.proceeded_files: list = list()
-
-
+        self.step_sec: float = kwargs.get("step_sec", DefaultValues.step_sec)
+        self.suffix: str = kwargs.get('type', DefaultValues.type)
 
     def do_task(self):
         for file_path in self.files_for_task:

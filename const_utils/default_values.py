@@ -8,3 +8,4 @@ class DefaultValues:
     pattern: tuple = ()
     sleep: Union[int, bool] = 60
     type: str = ".jpg"
+    step_sec: float = 600
