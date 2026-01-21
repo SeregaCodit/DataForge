@@ -284,3 +284,4 @@ poetry.toml
 pyrightconfig.json
 /media/
 /.idea/AutoFileManager.iml
+/start_tasks.sh
