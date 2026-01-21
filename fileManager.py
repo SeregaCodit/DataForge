@@ -1,6 +1,6 @@
 import argparse
 from const_utils.parser_help import HelpStrings as hs
-from const_utils.commands import Commands as cmd
+from const_utils.commands import Commands
 from const_utils.arguments import Arguments as arg
 from const_utils.default_values import DefaultValues as defaults
 from file_operations.move import MoveOperation
@@ -8,30 +8,33 @@ from file_operations.slice import SliceOperation
 
 
 class FileManager:
-    """Клас, що відповідає за CLI та запуск команд"""
+    """Class corresponding to CLI and launch command"""
     def __init__(self):
         self.parser = argparse.ArgumentParser(description="FileManager")
         self.subparsers = self.parser.add_subparsers(dest="command")
+        self.commands = {
+            Commands.move: MoveOperation,
+            Commands.slice: SliceOperation
+        }
+
         self._setup_commands()
 
-    def _setup_commands(self):
-        move_parser = self.subparsers.add_parser(cmd.move, help=hs.move)
-        move_parser.add_argument(arg.src, help=hs.src)
-        move_parser.add_argument(arg.dst, help=hs.dst)
-        move_parser.add_argument(arg.pattern, arg.p, help=hs.pattern, nargs="+", default=[defaults.pattern])
-        move_parser.add_argument(arg.repeat, arg.r, help=hs.repeat, action='store_true')
-        move_parser.add_argument(arg.sleep, arg.s, help=hs.sleep, default=defaults.sleep)
-        move_parser.set_defaults(cls=MoveOperation)
+    @staticmethod
+    def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
+        """Add common arguments for all commands"""
+        parser.add_argument(arg.src, help=hs.src)
+        parser.add_argument(arg.dst, help=hs.dst)
+        parser.add_argument(arg.pattern, arg.p, help=hs.pattern, nargs="+", default=[defaults.pattern])
+        parser.add_argument(arg.repeat, arg.r, help=hs.repeat, action='store_true')
+        parser.add_argument(arg.sleep, arg.s, help=hs.sleep, default=defaults.sleep)
 
-        slice_parser = self.subparsers.add_parser(cmd.slice)
-        slice_parser.add_argument(arg.src, help=hs.src)
-        slice_parser.add_argument(arg.dst, help=hs.dst)
-        slice_parser.add_argument(arg.pattern, arg.p, help=hs.pattern, nargs="+", default=[defaults.pattern])
-        slice_parser.add_argument(arg.type, arg.t, help=hs.type, default=defaults.type)
-        slice_parser.add_argument(arg.step_sec, arg.step, help=hs.step_sec, default=1)
-        slice_parser.add_argument(arg.repeat, arg.r, help=hs.repeat, action='store_true')
-        slice_parser.add_argument(arg.sleep, arg.s, help=hs.sleep, default=defaults.sleep)
-        slice_parser.set_defaults(cls=SliceOperation)
+    def _setup_commands(self) -> None:
+        """setup all commands"""
+        for command, operation_class in self.commands.items():
+            subparser = self.subparsers.add_parser(command)
+            self._add_common_arguments(subparser)
+            operation_class.add_arguments(subparser)
+            subparser.set_defaults(cls=operation_class)
 
     def execute(self):
         args = self.parser.parse_args()

@@ -1,3 +1,6 @@
+import argparse
+
+from const_utils.arguments import Arguments
 from const_utils.default_values import DefaultValues
 from const_utils.parser_help import HelpStrings
 from file_operations.file_operation import FileOperation
@@ -10,6 +13,19 @@ class SliceOperation(FileOperation):
         super().__init__(**kwargs)
         self.step_sec: float = kwargs.get("step_sec", DefaultValues.step_sec)
         self.suffix: str = kwargs.get('type', DefaultValues.type)
+
+    @staticmethod
+    def add_arguments(parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            Arguments.type, Arguments.t,
+            help=HelpStrings.type,
+            default=DefaultValues.type
+        )
+        parser.add_argument(
+            Arguments.step_sec, Arguments.step,
+            help=HelpStrings.step_sec,
+            default=DefaultValues.step_sec
+        )
 
     def do_task(self):
         for file_path in self.files_for_task:

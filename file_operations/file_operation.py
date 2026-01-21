@@ -1,3 +1,4 @@
+import argparse
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -71,6 +72,7 @@ class FileOperation(ABC):
     def add_arguments(parser: argparse.ArgumentParser) -> None:
         """Add specific arguments for operation"""
         pass
+
     @abstractmethod
     def do_task(self):
         """Abstract method to do a task of a file operation"""
