@@ -3,6 +3,7 @@ import shutil
 from file_operations.file_operation import FileOperation
 
 class MoveOperation(FileOperation):
+    """Move files that match a patterns from source directory to target directory """
     def do_task(self):
         for file_path in self.files_for_task:
             # Переміщуємо тільки файли, ігноруємо папку призначення, якщо вона всередині джерела
