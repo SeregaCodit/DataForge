@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Arguments:
+    """Command arguments"""
     src: str = "src"
     dst: str = "dst"
     pattern: str = "--pattern"
