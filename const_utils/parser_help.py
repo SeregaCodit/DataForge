@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from const_utils.default_values import DefaultValues as defaults
+from logger.log_level_mapping import LevelMapping
+
 
 @dataclass
 class HelpStrings:
@@ -18,3 +20,5 @@ class HelpStrings:
     step_sec: str = "time interval in seconds between each step"
     type: str = "destination type of file"
     remove: str = "remove video file after slicing"
+    log_path: str = f"Default: {defaults.log_path} path to log directory"
+    log_level: str = f"Default: {defaults.log_level}. A level of logging matches mapping: {str(LevelMapping.mapping())}"
