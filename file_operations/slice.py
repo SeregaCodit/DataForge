@@ -15,6 +15,7 @@ class SliceOperation(FileOperation):
         self.step_sec: float = kwargs.get("step_sec", DefaultValues.step_sec)
         self.suffix: str = kwargs.get('type', DefaultValues.type)
         self.remove: bool = kwargs.get('remove', DefaultValues.remove)
+        self.slicer: VideoSlicer = VideoSlicer()
 
     @staticmethod
     def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -38,24 +39,27 @@ class SliceOperation(FileOperation):
     def do_task(self):
         for file_path in self.files_for_task:
             if file_path.is_file():
-                print(f"[{self.__class__.__name__}] {file_path}]", end=" ")
-                sliced_count = VideoSlicer.slice(
+                ret, sliced_count = self.slicer.slice(
                     source_file=file_path,
                     target_dir=self.target_directory,
                     suffix=self.suffix,
                     step=self.step_sec
                 )
-                print(f"-> sliced to {sliced_count} images", end="\n")
+
+                if ret:
+                    self.logger.info(f"{file_path} sliced to {sliced_count} images")
+                else:
+                    self.logger.warning(f"Unable to read {file_path}. Not sliced.")
+                    continue
 
                 if self.remove:
                     self.remove_source(file_path)
 
-        # self.stop = True
 
-    @staticmethod
-    def remove_source(source_file: Path) -> None:
+    def remove_source(self,source_file: Path) -> None:
         """delete source file that just was sliced"""
         source_file.unlink(missing_ok=True)
+        self.logger.info(f"{source_file} deleted")
 
     @property
     def step_sec(self) -> float:

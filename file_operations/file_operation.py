@@ -1,26 +1,40 @@
 import argparse
 import time
+
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Tuple, Union
+
+from logger.log_level_mapping import LevelMapping
+from logger.logger import LoggerConfigurator
 
 
 class FileOperation(ABC):
     """Abstract class for file operations"""
     def __init__(self, **kwargs):
+        self.command: str = kwargs.get("command", "operation")
         self.sleep: float = kwargs.get('sleep', 60)
         self.repeat: bool = kwargs.get('repeat', False)
         self.files_for_task: Tuple[Union[Path]] = tuple()
         self.pattern: tuple = kwargs.get('pattern', ())
         self.src: str = kwargs.get('src', '')
         self.dst: str = kwargs.get('dst', '')
-
-        # for key, value in kwargs.items():
-        #     setattr(self, key, value)
-
         self.source_directory = Path(self.src)
         self.target_directory = Path(self.dst)
         self.stop: bool = False
+
+        # -----логування-----
+        log_file = self.command
+        log_level = kwargs.get("log_level", LevelMapping.info)
+        log_path = kwargs.get("log_path", None)
+
+        self.logger = LoggerConfigurator.setup(
+            name=self.__class__.__name__,
+            log_level=log_level,
+            log_path=Path(log_path) / f"{log_file}.log" if log_path else None,
+        )
+        self.logger.info(f"Started with parameters: {kwargs}")
+
 
     def get_files(self) -> None:
         """Get files from source directory that match a set of patterns"""
@@ -31,11 +45,13 @@ class FileOperation(ABC):
             files.update(current_pattern_files)
 
         self.files_for_task = tuple(files)
+        self.logger.debug(f"Total files_for_task: {len(self.files_for_task)}")
 
     def check_source_directory(self) -> None:
         """Check if source directory is valid"""
         if not self.source_directory.exists():
-            print(f"[ERROR] Source path '{self.src}' does not exist.")
+            # print(f"[ERROR] Source path '{self.src}' does not exist.")
+            self.logger.error(f"Source path '{self.src}' does not exist.")
             raise FileNotFoundError
 
     def check_directories(self) -> None:
@@ -53,8 +69,9 @@ class FileOperation(ABC):
                 self.get_files()
 
                 if len(self.files_for_task) == 0:
-                    print(f"[!] No files found in {self.source_directory}. Waiting {self.sleep} seconds.", end="\n",
-                          flush=True)
+                    # print(f"[!] No files found in {self.source_directory}. Waiting {self.sleep} seconds.", end="\n",
+                    #       flush=True)
+                    self.logger.info(f"No files found for task'{self.pattern}'. Wait for {self.sleep} seconds...")
                     time.sleep(self.sleep)
                     continue
 
@@ -62,9 +79,10 @@ class FileOperation(ABC):
 
             except KeyboardInterrupt:
                 self.stop = True
-                print("\nCtrl+C pressed, stopping move.")
+                self.logger.info(f"Ctrl+C pressed, stopping...")
 
             if self.stop or not self.repeat:
+                self.logger.info(f"Finished\n{'-' * 10}\n")
                 break
 
     @staticmethod

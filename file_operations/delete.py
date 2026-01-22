@@ -17,6 +17,5 @@ class DeleteOperation(FileOperation):
         """Delete files that match the pattern"""
         for file_path in self.files_for_task:
             if file_path.is_file():
-                print(f"[{self.__class__.__name__}] deleting {file_path}", end=" ")
                 file_path.unlink(missing_ok=True)
-                print("[OK]")
+                self.logger.info(f"deleted {file_path}")
