@@ -1,11 +1,18 @@
+from ast import Tuple
 from pathlib import Path
 
+from const_utils.default_values import DefaultValues
+from logger.log_level_mapping import LevelMapping
+from logger.logger import LoggerConfigurator
 import cv2
 
 class VideoSlicer:
     """slicing video file and saving it to target directory"""
-    @staticmethod
-    def slice(source_file: Path, target_dir: Path, suffix: str = ".jpg", step: float = 1):
+    def __init__(self):
+        self.__sliced: bool = False
+
+
+    def slice(self, source_file: Path, target_dir: Path, suffix: str = ".jpg", step: float = 1) -> tuple:
         """
         slicing video file and saving it to target directory
         :param source_file: path to video file
@@ -17,8 +24,7 @@ class VideoSlicer:
         cap = cv2.VideoCapture(str(source_file))
 
         if not cap.isOpened():
-            print(f"Cannot open {source_file}")
-            return 0
+            return self.sliced, 0
 
         fps = cap.get(cv2.CAP_PROP_FPS)
         step_frames = int(fps * step)
@@ -40,7 +46,9 @@ class VideoSlicer:
             frame_id += 1
 
         cap.release()
+        self.__sliced = True
+        return self.sliced, img_counter
 
-        return img_counter
-
-
+    @property
+    def sliced(self) -> bool:
+        return self.__sliced
