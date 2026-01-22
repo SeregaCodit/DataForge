@@ -44,7 +44,7 @@ for check the command usage and available arguments
 
 For more comfortable using FileManager with multiple tasks you can create an .sh file or modify [strat_all_tasks.sh](https://github.com/SeregaCodit/AutoFileManager/blob/main/strat_all_tasks.sh) with list of your commands. And run all of them just by one simple command:
 
-    bash path_to_file/start_tasks.sh
+    bash path_to_file/strat_all_tasks.sh
 
 for stop executing of all commands use:
 
