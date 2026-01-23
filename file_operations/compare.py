@@ -48,6 +48,6 @@ class CompareOperation(FileOperation):
         )
 
     def do_task(self):
-        pass
+        self.comparer.compare_files(image_dir=self.source_directory, threshold=self.threshold)
 
 
