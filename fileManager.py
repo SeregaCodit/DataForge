@@ -4,6 +4,7 @@ from const_utils.parser_help import HelpStrings as hs
 from const_utils.commands import Commands
 from const_utils.arguments import Arguments as arg
 from const_utils.default_values import DefaultValues as defaults
+from file_operations.compare import CompareOperation
 from file_operations.delete import DeleteOperation
 from file_operations.move import MoveOperation
 from file_operations.slice import SliceOperation
@@ -18,7 +19,8 @@ class FileManager:
         self.commands = {
             Commands.move: MoveOperation,
             Commands.slice: SliceOperation,
-            Commands.delete: DeleteOperation
+            Commands.delete: DeleteOperation,
+            Commands.compare: CompareOperation
         }
 
         self._setup_commands()
@@ -98,6 +100,17 @@ if __name__ == "__main__":
     #     "delete",
     #     "./media/imgs_new/",
     #     "-p", ".jpg",
-    # ]
+    # -----COMPARE-----
+    sys.argv = [
+        "fileManager.py",
+        "compare",
+        "./media/imgs/",
+        # "./media/imgs_new/",
+        "-p", ".jpg",
+        "--filetype", "image",
+        "--threshold", "10",
+    ]
+
+    #
     app = FileManager()
     app.execute()
