@@ -4,6 +4,7 @@ from typing import Union, Tuple, Dict, List, Set
 
 import numpy as np
 
+from logger.logger import LoggerConfigurator
 from const_utils.default_values import DefaultValues
 
 
@@ -12,14 +13,18 @@ class BaseHasher(ABC):
     def __init__(
             self,
             image_dir: Path,
-            kernel_size: Union[Tuple[int, int], int] = (16, 16),
             hash_type: str = DefaultValues.dhash,
-            threshold: float = 0.1
+            threshold: float = 0.1,
+            log_path: Path = DefaultValues.log_path,
     ):
         self.hash_type = hash_type
         self.image_dir = image_dir
-        self.kernel_size = kernel_size
         self.threshold = threshold
+        self.logger = LoggerConfigurator.setup(
+            name=self.__class__.__name__,
+            log_path=Path(log_path) / f"{self.__class__.__name__}.log" if log_path else None,
+            log_level=DefaultValues.log_level
+        )
 
     @abstractmethod
     def compute_hash(self, image_path: Path) -> np.ndarray:
@@ -41,6 +46,7 @@ class BaseHasher(ABC):
             if path.is_file():
                 _hash = self.compute_hash(path)
                 hash_map[path] = _hash
+
         return hash_map
 
     def find_duplicates(self, hashmap: Dict[Path, np.ndarray]) -> List[Path]:
