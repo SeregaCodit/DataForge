@@ -20,7 +20,8 @@ class CompareOperation(FileOperation):
         self.action = kwargs.get(Arguments.action, DefaultValues.action)
         self.method = kwargs.get(Arguments.method, DefaultValues.dhash)
         self.comparer = self.mapping[self.filetype](
-            self.method
+            method_name=self.method,
+            log_path = self.log_path
         )
 
     @staticmethod

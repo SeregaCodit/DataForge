@@ -26,12 +26,12 @@ class FileOperation(ABC):
         # -----логування-----
         log_file = self.command
         log_level = kwargs.get("log_level", LevelMapping.info)
-        log_path = kwargs.get("log_path", None)
+        self.log_path = kwargs.get("log_path", None)
 
         self.logger = LoggerConfigurator.setup(
             name=self.__class__.__name__,
             log_level=log_level,
-            log_path=Path(log_path) / f"{log_file}.log" if log_path else None,
+            log_path=Path(self.log_path) / f"{log_file}.log" if self.log_path else None,
         )
         self.logger.info(f"Started with parameters: {kwargs}")
 

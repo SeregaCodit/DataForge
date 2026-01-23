@@ -56,17 +56,17 @@ if __name__ == "__main__":
 
     # Емулюємо введення в терміналі:
     #-----SLICE-----
-    sys.argv = [
-        "fileManager.py",
-        "slice",
-        "./media/",
-        "./media/imgs/",
-        "-p", ".mp4", ".MP4",
-        "-t", ".jpg",
-        # "-r",
-        "-s", "60",
-        "-step", "1",
-    ]
+    # sys.argv = [
+    #     "fileManager.py",
+    #     "slice",
+    #     "./media/",
+    #     "./media/imgs/",
+    #     "-p", ".mp4", ".MP4",
+    #     "-t", ".jpg",
+    #     # "-r",
+    #     "-s", "60",
+    #     "-step", "1",
+    # ]
 
     #-----SLICE WITH DELETING-----
     # sys.argv = [
