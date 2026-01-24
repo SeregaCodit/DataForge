@@ -57,7 +57,7 @@ if __name__ == "__main__":
     import sys
 
     # Емулюємо введення в терміналі:
-    #-----SLICE-----
+    # -----SLICE-----
     # sys.argv = [
     #     "fileManager.py",
     #     "slice",
@@ -101,15 +101,15 @@ if __name__ == "__main__":
     #     "./media/imgs_new/",
     #     "-p", ".jpg",
     # -----COMPARE-----
-    sys.argv = [
-        "fileManager.py",
-        "compare",
-        "./media/imgs/",
-        # "./media/imgs_new/",
-        "-p", ".jpg",
-        "--filetype", "image",
-        "--threshold", "10",
-    ]
+    # sys.argv = [
+    #     "fileManager.py",
+    #     "compare",
+    #     "./media/imgs/",
+    #     # "./media/imgs_new/",
+    #     "-p", ".jpg", ".png",
+    #     "--filetype", "image",
+    #     "--threshold", "10",
+    # ]
 
     #
     app = FileManager()
