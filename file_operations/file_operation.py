@@ -68,9 +68,7 @@ class FileOperation(ABC):
             try:
                 self.get_files()
 
-                if len(self.files_for_task) == 0:
-                    # print(f"[!] No files found in {self.source_directory}. Waiting {self.sleep} seconds.", end="\n",
-                    #       flush=True)
+                if len(self.files_for_task) == 0 and self.repeat:
                     self.logger.info(f"No files found for task'{self.pattern}'. Wait for {self.sleep} seconds...")
                     time.sleep(self.sleep)
                     continue
