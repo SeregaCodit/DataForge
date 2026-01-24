@@ -11,12 +11,19 @@ from const_utils.default_values import DefaultValues
 class BaseHasher(ABC):
     """a base hasher class"""
     def __init__(
-            self,
-            hash_type: str = DefaultValues.dhash,
-            hash_size: Union[Tuple[int, int], int] = 16,
-            threshold: float = 0.1,
-            log_path: Path = DefaultValues.log_path,
+        self,
+        hash_type: str = DefaultValues.dhash,
+        hash_size: Union[Tuple[int, int], int] = 16,
+        threshold: float = 10,
+        log_path: Path = DefaultValues.log_path,
     ):
+        """
+        :param hash_type: type of hash algorithm to use
+        :param hash_size: size of resizing image in algorithm, hash_size will be square of this value
+        :param threshold: threshold in percentage for hemming distance. Files that have lower hemming distance will be
+            considered duplicates.
+        :param log_path: path to log file
+        """
         self.hash_type = hash_type
         self.hash_size = hash_size
         self.threshold = threshold
@@ -81,6 +88,10 @@ class BaseHasher(ABC):
 
     @hash_size.setter
     def hash_size(self, value: Union[Tuple[int, int], int]) -> None:
+        """
+        stups hash size, converts into int type
+        :param value: size of hash. Using for resizing an image
+        """
         if isinstance(value, int):
             self._hash_size = value
         elif isinstance(value, tuple):
@@ -95,8 +106,26 @@ class BaseHasher(ABC):
 
     @threshold.setter
     def threshold(self, value: Union[float, int]) -> None:
+        """
+        setting a threshold value in percentage. If value is not float type - trying to convert it to float.
+        :param value: float or int minimal value in percents that means an image is not a duplicate of comparing image
+        """
+
+        try:
+            value = float(value)
+        except ValueError:
+            self.logger.error(f"threshold must be float, got {type(value)}")
+            raise TypeError(f"threshold must be float, got {type(value)}")
+
+        if value < 0:
+            self.logger.error(f"threshold must be non-negative, got {value}")
+            raise ValueError(f"threshold must be non-negative, got {value}")
+
+        if value > DefaultValues.max_percentage:
+            value = DefaultValues.max_percentage
+
         hash_sqr = self.hash_size * self.hash_size
-        self._threshold = int(hash_sqr * value)
+        self._threshold = int(hash_sqr * (value / DefaultValues.max_percentage))
 
 
 
