@@ -61,6 +61,7 @@ if __name__ == "__main__":
         "-p", ".jpg", ".png",
         "--filetype", "image",
         "--threshold", "10",
+        "-rm"
     ]
     app = FileManager()
     app.execute()

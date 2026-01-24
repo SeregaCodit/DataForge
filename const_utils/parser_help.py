@@ -19,7 +19,7 @@ class HelpStrings:
     )
     step_sec: str = "time interval in seconds between each step"
     type: str = "destination type of file"
-    remove: str = "remove video file after slicing"
+    remove: str = "remove files after processing"
     log_path: str = f"Default: {defaults.log_path} path to log directory"
     log_level: str = f"Default: {defaults.log_level}. A level of logging matches mapping: {str(LevelMapping.mapping())}"
     filetype: str = "Type of file. Currently this parameter only supports 'image'"
