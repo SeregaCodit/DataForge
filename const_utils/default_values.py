@@ -22,3 +22,4 @@ class DefaultValues:
     cnn: str = "cnn"
     action: str = "copy"
     hash_threshold: str = 10
+    max_percentage: int = 100
