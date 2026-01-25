@@ -5,3 +5,4 @@ packaging
 pluggy
 Pygments
 pytest
+pillow
