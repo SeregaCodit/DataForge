@@ -11,7 +11,9 @@ if you don’t want the command works in a cycle, just don't use "-r" argument. 
 ## Available commands
 - **move** - move files from source directory to target directory
 - **slice** - slice video files to images from the source directory to the target directory. Also, you can set flag "--remove" or "-rm" for deleting a source video file after slicing
-- **delete** - "delete files that match patterns from source directory"
+- **delete** - delete files that match patterns from source directory
+- **dedup** - find duplicates in source directory that matches a pattern. An image means a duplicate if it's hash has lower 
+Hamming distance with comparing image hash than threshold value. The threshold value setups in percentage and must be in range [0, 100]. Pay attention to core_size parameter: the lower value makes details at photo less important, and the higher value makes details mach important while comparing information at images 
 ## How to use:
 clone git repository:
 
@@ -44,7 +46,7 @@ for check the command usage and available arguments
 
 For more comfortable using FileManager with multiple tasks you can create an .sh file or modify [strat_all_tasks.sh](https://github.com/SeregaCodit/AutoFileManager/blob/main/strat_all_tasks.sh) with list of your commands. And run all of them just by one simple command:
 
-    bash path_to_file/strat_all_tasks.sh
+    bash path_to_file/start_all_tasks.sh
 
 for stop executing of all commands use:
 
