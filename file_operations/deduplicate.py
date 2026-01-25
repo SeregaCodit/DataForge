@@ -29,7 +29,8 @@ class DedupOperation(FileOperation, FileRemoverMixin):
         self.comparer: ImageComparer = self.mapping[self.filetype](
             method_name=self.method,
             log_path = self.log_path,
-            threshold_percentage=float(kwargs.get("threshold", DefaultValues.hash_threshold))
+            threshold_percentage=int(kwargs.get("threshold", DefaultValues.hash_threshold)),
+            core_size = int(kwargs.get("core_size", DefaultValues.core_size))
         )
 
     @staticmethod
@@ -53,6 +54,11 @@ class DedupOperation(FileOperation, FileRemoverMixin):
             Arguments.remove, Arguments.rm,
             help=HelpStrings.remove,
             action="store_true"
+        )
+        parser.add_argument(
+            Arguments.core_size,
+            help=HelpStrings.core_size,
+            default=DefaultValues.core_size
         )
 
 
