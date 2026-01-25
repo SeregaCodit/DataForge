@@ -42,11 +42,11 @@ class BaseHasher(ABC):
     def compute_hash(image_path: Path, core_size: int = DefaultValues.core_size) -> np.ndarray:
         pass
 
-    @staticmethod
-    def calculate_distance(hash1: np.ndarray, hash2: np.ndarray) -> int:
-        """calculate hemming distance between two image hashes"""
-        hemming_distance = np.count_nonzero(hash1 != hash2)
-        return int(hemming_distance)
+    # @staticmethod
+    # def calculate_distance(hash1: np.ndarray, hash2: np.ndarray) -> int:
+    #     """calculate hemming distance between two image hashes"""
+    #     hemming_distance = np.count_nonzero(hash1 != hash2)
+    #     return int(hemming_distance)
 
     def get_hashmap(self, image_paths: Tuple[Path]) -> Dict[Path, np.ndarray]:
         """
@@ -54,15 +54,16 @@ class BaseHasher(ABC):
         creating a dict with image path's and their hashes
         """
         self.logger.info(f"Building hashmap in parallel using {DefaultValues.max_workers} workers for {len(image_paths)} images...")
-
-
         hash_func = partial(self.__class__.compute_hash, core_size=self.core_size)
 
         with ProcessPoolExecutor(max_workers=DefaultValues.max_workers) as executor:
             hashes = list(executor.map(hash_func, image_paths))
-        hash_map = dict(zip(image_paths, hashes))
-        self.logger.info(
-            f"Got hashmap for {len(image_paths)} images...")
+
+        hash_map = {
+            path: h for path, h in zip(image_paths, hashes)
+            if h is not None
+        }
+        self.logger.info(f"Successfully hashed {len(hash_map)} out of {len(image_paths)} images")
         return hash_map
 
     def find_duplicates(self, hashmap: Dict[Path, np.ndarray]) -> List[Path]:
@@ -70,27 +71,36 @@ class BaseHasher(ABC):
         :param hashmap: a has_map of all files in the source_directory
         comparing all files via each with each principe in hashmap by hemming distance
         """
-        self.logger.info(f"Finding duplicates in {len(hashmap)} images...")
-        duplicates: Set[Path] = set()
+
+        if not hashmap:
+            return []
+
+        self.logger.info(f"Vectorizing comparison for {len(hashmap)} images...")
+
         paths: List[Path] = list(hashmap.keys())
+        try:
+            matrix = np.array(list(hashmap.values()), dtype=bool)
+        except ValueError as e:
+            self.logger.error("Failed to create matrix. Some hashes have different lengths!")
+            raise e
 
-        #вважаємо поточний файл унікальним
-        for unique_index in range(len(paths)):
-            unique_image = paths[unique_index]
-            if unique_image in duplicates:
+        duplicates_indices: Set[int] = set()
+
+        for index in range(len(paths)):
+            if index in duplicates_indices:
                 continue
-            # вважаємо наступні файли кандидатами на дубль
-            for candidate_index in range(unique_index + 1, len(paths)):
-                candidate_image = paths[candidate_index]
-                if candidate_image in duplicates:
-                    continue
 
-                hemming_distance = self.calculate_distance(hashmap[unique_image], hashmap[candidate_image])
-                if hemming_distance < self.threshold:
-                    self.logger.info(f"duplicate {unique_image} -> {candidate_image}, hemming distance: {hemming_distance}")
-                    duplicates.add(candidate_image)
-        self.logger.info(f"Found {len(duplicates)} duplicate images")
-        return list(duplicates)
+            current_hash = matrix[index]
+            hamming_distances = np.count_nonzero(matrix != current_hash, axis=1)
+            matches = np.where(hamming_distances <= self.threshold)[0]
+
+            for match_idx in matches:
+                if match_idx > index:
+                    duplicates_indices.add(int(match_idx))
+
+        result = [paths[idx] for idx in duplicates_indices]
+        self.logger.info(f"Vectorized search finished. Found {len(result)} duplicates.")
+        return result
 
     @property
     def core_size(self) -> int:
