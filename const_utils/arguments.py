@@ -25,3 +25,4 @@ class Arguments:
     action: str = "--action"
     a: str = "-a"
     threshold: str = "--threshold"
+    core_size: str = "--core_size"
