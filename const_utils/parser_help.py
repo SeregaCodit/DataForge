@@ -29,3 +29,8 @@ class HelpStrings:
                    f"delete: deleting duplicates from source directory. All non duplicates files will be stay in same directory")
     threshold: str = (f"Default: {DefaultValues.hash_threshold}. A minimal difference between files that means the files"
                       f" have a different information. Using Hemming distance for *hash methods")
+    core_size: str = (f"Default: {DefaultValues.core_size}.\n"
+                      f"The size at which the image will be resized to square. This means that the actual hash size "
+                      f"will be equal to the square of the kernel size."
+
+    )
