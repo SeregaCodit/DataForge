@@ -15,7 +15,7 @@ class DHash(BaseHasher):
         if image is None:
             return None
 
-        resized_image = cv2.resize(image, (self.hash_size + 1, self.hash_size), interpolation=cv2.INTER_AREA)
+        resized_image = cv2.resize(image, (self.core_size + 1, self.core_size), interpolation=cv2.INTER_AREA)
         # лівий піксель яскравіший за правий — True, інакше False
         gradient_difference = resized_image[:, 1:] > resized_image[:, :-1]
 
