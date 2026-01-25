@@ -36,7 +36,8 @@ MAPPING = {
     Commands.dedup: [
         "fileManager.py",
         "dedup",
-        "./media/imgs/",
+        # "./media/imgs/",
+        "/mnt/qnap/Staff/Naumenko/NotTheSkynet/img_dataset/",
         "-p", ".jpg", ".png",
         "--filetype", "image",
         "--threshold", "10",
@@ -45,7 +46,7 @@ MAPPING = {
 
 if __name__ == "__main__":
     MAPPING[Commands.dedup].append(Arguments.core_size)
-    MAPPING[Commands.dedup].append("64")
+    MAPPING[Commands.dedup].append("16")
 
 
     sys.argv = MAPPING[Commands.dedup]

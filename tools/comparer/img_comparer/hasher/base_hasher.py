@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union, Tuple, Dict, List, Set
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
 import numpy as np
 
@@ -13,8 +15,8 @@ class BaseHasher(ABC):
     def __init__(
         self,
         hash_type: str = DefaultValues.dhash,
-        core_size: Union[Tuple[int, int], int] = 16,
-        threshold: int = 10,
+        core_size: Union[Tuple[int, int], int] = DefaultValues.core_size,
+        threshold: int = DefaultValues.hash_threshold,
         log_path: Path = DefaultValues.log_path,
     ):
         """
@@ -35,9 +37,9 @@ class BaseHasher(ABC):
             log_path=Path(log_path) / f"{self.__class__.__name__}.log" if log_path else None,
             log_level=DefaultValues.log_level
         )
-
+    @staticmethod
     @abstractmethod
-    def compute_hash(self, image_path: Path) -> np.ndarray:
+    def compute_hash(image_path: Path, core_size: int = DefaultValues.core_size) -> np.ndarray:
         pass
 
     @staticmethod
@@ -51,13 +53,16 @@ class BaseHasher(ABC):
         :param image_paths: list of images paths
         creating a dict with image path's and their hashes
         """
-        hash_map: Dict[Path, np.ndarray] = {}
+        self.logger.info(f"Building hashmap in parallel using {DefaultValues.max_workers} workers for {len(image_paths)} images...")
 
-        for path in image_paths:
-            if path.is_file():
-                _hash = self.compute_hash(path)
-                hash_map[path] = _hash
 
+        hash_func = partial(self.__class__.compute_hash, core_size=self.core_size)
+
+        with ProcessPoolExecutor(max_workers=DefaultValues.max_workers) as executor:
+            hashes = list(executor.map(hash_func, image_paths))
+        hash_map = dict(zip(image_paths, hashes))
+        self.logger.info(
+            f"Got hashmap for {len(image_paths)} images...")
         return hash_map
 
     def find_duplicates(self, hashmap: Dict[Path, np.ndarray]) -> List[Path]:
@@ -65,6 +70,7 @@ class BaseHasher(ABC):
         :param hashmap: a has_map of all files in the source_directory
         comparing all files via each with each principe in hashmap by hemming distance
         """
+        self.logger.info(f"Finding duplicates in {len(hashmap)} images...")
         duplicates: Set[Path] = set()
         paths: List[Path] = list(hashmap.keys())
 
@@ -83,6 +89,7 @@ class BaseHasher(ABC):
                 if hemming_distance < self.threshold:
                     self.logger.info(f"duplicate {unique_image} -> {candidate_image}, hemming distance: {hemming_distance}")
                     duplicates.add(candidate_image)
+        self.logger.info(f"Found {len(duplicates)} duplicate images")
         return list(duplicates)
 
     @property

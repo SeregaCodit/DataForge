@@ -112,7 +112,7 @@ def test_compute_hash_returns_correct_shape(hasher, create_test_image, input_val
     image_path = create_test_image("valid.jpg")
 
     # Act
-    result = hasher.compute_hash(image_path)
+    result = hasher.compute_hash(image_path=image_path, core_size=hasher.core_size)
 
     # Assert
     assert result is not None

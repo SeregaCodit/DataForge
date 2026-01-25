@@ -25,6 +25,6 @@ class FileRemoverMixin:
             self.logger.warning(f"{path} is not a file")
         try:
             path.unlink(missing_ok=True)
-            self.logger.warning(f"{path} removed")
+            self.logger.info(f"{path} removed")
         except FileNotFoundError:
             self.logger.warning(f"{path} file not exists, skipping")

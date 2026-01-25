@@ -25,3 +25,4 @@ class DefaultValues:
     max_percentage: int = 100
     confirm_choice: tuple = ("delete", "вудуеу", "yes", "y", "true", "t", "1")
     core_size: int = 16
+    max_workers: int = 8
