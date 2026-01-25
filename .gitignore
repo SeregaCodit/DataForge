@@ -286,3 +286,4 @@ pyrightconfig.json
 /.idea/AutoFileManager.iml
 /start_tasks.sh
 /log/
+/cache/
