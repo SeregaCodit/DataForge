@@ -12,7 +12,8 @@ class ImageComparer:
             self,
             method_name: str = Constants.phash,
             log_path: Union[Path, None] = None,
-            threshold_percentage: float = 10,
+            threshold_percentage: int = 10,
+            core_size: int = 16
     ):
         """
         An orchestrator for comparing two images using principial different algorithms.
@@ -26,8 +27,8 @@ class ImageComparer:
         }
 
         self.method = self.method_mapping[method_name](
-            hash_size=16,
-            threshold=threshold_percentage
+            core_size=core_size,
+            threshold=threshold_percentage,
         )
 
         self.logger = LoggerConfigurator.setup(
