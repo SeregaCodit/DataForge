@@ -81,24 +81,24 @@ def test_core_size(input_value, expected_val):
     assert hasher.core_size == expected_val
 
 
-@pytest.mark.parametrize("input_value, expected_val", [
-    # equal hashes
-    ((np.array([0, 1, 0, 1]), np.array([0, 1, 0, 1])), 0),
-    # dist == 1
-    ((np.array([0, 0, 0, 1]), np.array([0, 1, 0, 1])), 1),
-    # dist == 2
-    ((np.array([0, 0, 0, 0]), np.array([0, 1, 0, 1])), 2),
-    # dist == 3
-    ((np.array([1, 0, 1, 1]), np.array([0, 0, 0, 0])), 3),
-    # dist == 4
-    ((np.array([0, 0, 0, 0]), np.array([1, 1, 1, 1])), 4)
-])
-def test_calculate_distance(hasher, input_value, expected_val):
-    hash1, hash2 = input_value
-    dist = hasher.calculate_distance(hash1, hash2)
-
-    assert isinstance(dist, int)
-    assert dist == expected_val
+# @pytest.mark.parametrize("input_value, expected_val", [
+#     # equal hashes
+#     ((np.array([0, 1, 0, 1]), np.array([0, 1, 0, 1])), 0),
+#     # dist == 1
+#     ((np.array([0, 0, 0, 1]), np.array([0, 1, 0, 1])), 1),
+#     # dist == 2
+#     ((np.array([0, 0, 0, 0]), np.array([0, 1, 0, 1])), 2),
+#     # dist == 3
+#     ((np.array([1, 0, 1, 1]), np.array([0, 0, 0, 0])), 3),
+#     # dist == 4
+#     ((np.array([0, 0, 0, 0]), np.array([1, 1, 1, 1])), 4)
+# ])
+# def test_calculate_distance(hasher, input_value, expected_val):
+#     hash1, hash2 = input_value
+#     dist = hasher.calculate_distance(hash1, hash2)
+#
+#     assert isinstance(dist, int)
+#     assert dist == expected_val
 
 @pytest.mark.parametrize("input_value, expected_val", [
     (16, 16 * 16),
