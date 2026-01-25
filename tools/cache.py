@@ -48,13 +48,8 @@ class CacheIO:
 
     @staticmethod
     def generate_cache_filename(source_path: Path, hash_type: str, core_size: int) -> str:
-        # 1. Беремо абсолютний шлях, щоб уникнути плутанини між "./media" та "/home/user/media"
+        """generate cache filename from source_path"""
         abs_path = str(source_path.resolve())
-
-        # 2. Генеруємо MD5 хеш від шляху (потрібно закодувати рядок у байти)
         path_hash = hashlib.md5(abs_path.encode('utf-8')).hexdigest()
-
-        # 3. Формуємо фінальне ім'я
-        # Додаємо core_size та hash_type в назву, щоб при зміні налаштувань кеш автоматично "скидався"
         return f"cache_{path_hash}_{hash_type}_s{core_size}.pkl"
 
