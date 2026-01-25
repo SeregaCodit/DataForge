@@ -7,10 +7,11 @@ from const_utils.copmarer import Constants
 from const_utils.default_values import DefaultValues
 from const_utils.parser_help import HelpStrings
 from file_operations.file_operation import FileOperation
+from file_operations.file_remover import FileRemoverMixin
 from tools.comparer.img_comparer.img_comparer import ImageComparer
 
 
-class DedupOperation(FileOperation):
+class DedupOperation(FileOperation, FileRemoverMixin):
     def __init__(self, **kwargs):
         """
         find duplicate files in source folder
@@ -63,7 +64,7 @@ class DedupOperation(FileOperation):
         self.logger.info(f"Found {len(duplicates)} duplicates in {len(self.files_for_task)} files")
 
         if len(duplicates) > 0 and self.confirm_removing():
-                self.remove_duplicates(duplicates)
+                self._remove_all(duplicates)
 
     def confirm_removing(self) -> bool:
         """check if user wants to remove duplicates"""
@@ -71,25 +72,3 @@ class DedupOperation(FileOperation):
             user_choice = input("for deleting founded duplicate files type 'delete': ")
             return user_choice.lower() in DefaultValues.confirm_choice
         return True
-
-    def remove_duplicates(self, duplicates: List[Path]) -> None:
-        """
-        remove all duplicate files in duplicates list
-        :param duplicates: a list of duplicate paths
-        :return: None
-
-        """
-        for duplicate in duplicates:
-            if duplicate.is_file():
-                try:
-                    duplicate.unlink(missing_ok=True)
-                    self.logger.info(f"Removed duplicate file: {duplicate}")
-                except FileNotFoundError:
-                    self.logger.warning(f"File {duplicate} was not found, skipping")
-            else:
-                self.logger.info(f"Unable to delete {duplicate} is not a file!")
-
-
-
-
-
