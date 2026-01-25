@@ -20,7 +20,7 @@ MAPPING = {
     Commands.delete: [
         "fileManager.py",
         "delete",
-        "./media/imgs_new/",
+        "./media/imgs/",
         "-p", ".jpg",
     ],
     Commands.move: [
@@ -43,6 +43,6 @@ MAPPING = {
 }
 
 if __name__ == "__main__":
-    sys.argv = MAPPING[Commands.dedup]
+    sys.argv = MAPPING[Commands.delete]
     app = FileManager()
     app.execute()
