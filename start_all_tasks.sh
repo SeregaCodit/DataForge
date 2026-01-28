@@ -1,10 +1,9 @@
 #!/bin/bash
 # simple running multiple commands
-# A path to yoy virtual environment if it exist
-VENV_PATH="./venv/bin/activate"
+
 FILE_MANAGER_PATH={path_to_filemanager}
 # activate venv
-source $VENV_PATH
+source .venv/bin/activate
 
 echo "File Manager running ...."
 

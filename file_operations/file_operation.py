@@ -5,18 +5,19 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Tuple, Union
 
-from logger.log_level_mapping import LevelMapping
+from const_utils.default_values import AppSettings
 from logger.logger import LoggerConfigurator
 
 
 class FileOperation(ABC):
     """Abstract class for file operations"""
-    def __init__(self, **kwargs):
+    def __init__(self, settings: AppSettings, **kwargs):
+        self.settings: AppSettings = settings
         self.command: str = kwargs.get("command", "operation")
-        self.sleep: float = kwargs.get('sleep', 60)
-        self.repeat: bool = kwargs.get('repeat', False)
+        self.sleep: float = kwargs.get('sleep', settings.sleep)
+        self.repeat: bool = kwargs.get('repeat', settings.repeat)
         self.files_for_task: Tuple[Union[Path]] = tuple()
-        self.pattern: tuple = kwargs.get('pattern', ())
+        self.pattern: tuple = kwargs.get('pattern', settings.pattern)
         self.src: str = kwargs.get('src', '')
         self.dst: str = kwargs.get('dst', '')
         self.source_directory = Path(self.src)
@@ -25,8 +26,8 @@ class FileOperation(ABC):
 
         # -----логування-----
         log_file = self.command
-        log_level = kwargs.get("log_level", LevelMapping.info)
-        self.log_path = kwargs.get("log_path", None)
+        log_level = kwargs.get("log_level", settings.log_level)
+        self.log_path = kwargs.get("log_path", settings.log_path)
 
         self.logger = LoggerConfigurator.setup(
             name=self.__class__.__name__,
@@ -85,7 +86,7 @@ class FileOperation(ABC):
 
     @staticmethod
     @abstractmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
+    def add_arguments(settings: AppSettings, parser: argparse.ArgumentParser) -> None:
         """Add specific arguments for operation"""
         pass
 

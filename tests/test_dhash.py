@@ -9,14 +9,25 @@ import numpy as np
 import pytest
 from unittest.mock import patch
 
+from const_utils.copmarer import Constants
+from const_utils.default_values import AppSettings
 from tools.comparer.img_comparer.hasher.dhash import DHash
 
 
 #-----FIXTURES-----
+
 @pytest.fixture
-def hasher():
+def settings():
+    settings = AppSettings.load_config(Constants.config_file)
+    return settings
+
+@pytest.fixture
+def hasher(settings):
     """create instance of DHash"""
-    return DHash(core_size=8, threshold=10)
+    hasher = DHash(settings)
+    hasher.core_size = 16
+    hasher.threshold = 10
+    return hasher
 
 @pytest.fixture
 def create_test_image(tmp_path):
@@ -39,8 +50,9 @@ def create_temp_img_file(color=(255, 0, 0), quality=100, noise=False):
     img = Image.new('RGB', (100, 100), color)
 
     if noise:
-        img.putpixel((10, 10), (0, 255, 0))
-        img.putpixel((50, 50), (255, 255, 255))
+        for x in range(40, 60):
+            for y in range(40, 60):
+                img.putpixel((x, y), (0, 255, 0))
 
     img.save(temp_file.name, format="JPEG", quality=quality)
     temp_file.close()
@@ -57,11 +69,7 @@ def create_temp_img_file(color=(255, 0, 0), quality=100, noise=False):
 def test_threshold(hasher, input_value, expected_vals):
     """test threshold setter"""
 
-    hasher = DHash(
-        hash_type="dhash",
-        core_size=16,
-        threshold=input_value
-    )
+    hasher.threshold = input_value
     assert isinstance(hasher.threshold, int)
     assert hasher.threshold == expected_vals
 
@@ -72,13 +80,10 @@ def test_threshold(hasher, input_value, expected_vals):
     (17.5, 17),
     ("8", 8)
 ])
-def test_core_size(input_value, expected_val):
+def test_core_size(hasher, input_value, expected_val):
 
-    hasher = DHash(
-        hash_type="dhash",
-        core_size=input_value,
-        threshold=10
-    )
+    hasher.core_size = input_value
+
     assert isinstance(hasher.core_size, int)
     assert hasher.core_size == expected_val
 
@@ -95,9 +100,6 @@ def test_n_jobs_clamping(hasher, input_value, expected_value):
     assert isinstance(hasher.n_jobs, int)
     assert hasher.n_jobs == expected_value
 
-# def test_n_jobs_invalid_type(hasher):
-#     with pytest.raises(ValueError):
-#         hasher.n_jobs = "not_a_number"
 
 @pytest.mark.parametrize("input_value, expected_val", [
     (16, 16 * 16),
@@ -126,7 +128,7 @@ def test_compute_hash_with_invalid_file(hasher, tmp_path):
     not_an_image.write_text("This is not a picture")
 
     # Act
-    result = hasher.compute_hash(not_an_image)
+    result = hasher.compute_hash(not_an_image, hasher.core_size)
 
     # Assert
     assert result is None
@@ -135,15 +137,16 @@ def test_compute_hash_consistency(hasher, create_test_image):
     # the same input must give the same result
     img_path = create_test_image("consistent.png")
 
-    hash1 = hasher.compute_hash(img_path)
-    hash2 = hasher.compute_hash(img_path)
+    hash1 = hasher.compute_hash(img_path, hasher.core_size)
+    hash2 = hasher.compute_hash(img_path, hasher.core_size)
 
     assert np.array_equal(hash1, hash2)
 
 
 def test_threshold_conversion(hasher):
     """Перевірка, що відсоток правильно конвертувався в біти"""
-    # 8*8 = 64 біти. 10% від 64 = 6.4, очікуємо 6 (int)
+    hasher.core_size = 8
+    hasher.threshold = 10
     assert hasher.threshold == 6
 
 def test_find_duplicates(hasher):
@@ -165,6 +168,8 @@ def test_find_duplicates_outside_percentage(hasher):
     Тестуємо різницю понад 10%.
     Відрізняються у 10 бітах — це НЕ дублікат.
     """
+    hasher.core_size = 8
+    hasher.threshold = 10
     h1 = np.zeros(64, dtype=bool)
     h2 = np.zeros(64, dtype=bool)
     h2[:10] = True  # відстань 10 (більше за поріг 6)
@@ -198,17 +203,18 @@ def test_find_duplicates_logic_flow(hasher):
     assert Path("A.jpg") not in result
 
 
-def test_identical_with_different_compression():
+def test_identical_with_different_compression(hasher):
     # 1. Створюємо оригінал та стиснену копію як реальні файли
     path_orig = Path(create_temp_img_file(color=(100, 150, 200), quality=100))
     path_comp = Path(create_temp_img_file(color=(100, 150, 200), quality=10))  # низька якість
 
-    hasher = DHash(threshold=5, core_size=8)
+    hasher.core_size = 8
+    hasher.threshold = 5
 
     try:
         hash_map = {
-            path_orig: hasher.compute_hash(path_orig),
-            path_comp: hasher.compute_hash(path_comp),
+            path_orig: hasher.compute_hash(path_orig, hasher.core_size),
+            path_comp: hasher.compute_hash(path_comp, hasher.core_size),
         }
         assert hasher.find_duplicates(hash_map), "Мали бути дублікатами при малому core_size"
     finally:
@@ -219,21 +225,22 @@ def test_identical_with_different_compression():
 @pytest.mark.parametrize(
     "input_value, expected_value",
     [
-        (8, False), # images should be duplicates because details become unimportant
-        (32, True)# images should not be duplicates because details become more important
+        (8, False), # images should not be duplicates because details become unimportant
+        (32, True)  # images should be duplicates because details become more important
     ]
 )
-def test_different_images_with_similar_composition(input_value, expected_value):
+def test_different_images_with_similar_composition(hasher, input_value, expected_value):
     # Створюємо два різних зображення (різні кольори)
     path_img1 = Path(create_temp_img_file(color=(0, 0, 255), noise=True))  # Синє з шумом
     path_img2 = Path(create_temp_img_file(color=(0, 0, 255), noise=False))  # Просто синє
 
-    hasher = DHash(threshold=2, core_size=int(input_value))
+    hasher.core_size = input_value
+    hasher.threshold = 5
 
     try:
         hash_map = {
-            path_img1: hasher.compute_hash(path_img1),
-            path_img2: hasher.compute_hash(path_img2),
+            path_img1: hasher.compute_hash(path_img1, hasher.core_size),
+            path_img2: hasher.compute_hash(path_img2, hasher.core_size),
         }
 
         result = hasher.find_duplicates(hash_map)

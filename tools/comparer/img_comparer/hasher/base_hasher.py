@@ -2,78 +2,127 @@ import multiprocessing
 from abc import ABC, abstractmethod
 from linecache import cache
 from pathlib import Path
-from typing import Union, Tuple, Dict, List, Set
+from typing import Union, Tuple, Dict, List, Set, Optional
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
 import numpy as np
 
+from const_utils.default_values import AppSettings
 from logger.logger import LoggerConfigurator
-from const_utils.default_values import DefaultValues
+# from const_utils.default_values import DefaultValues
 from tools.cache import CacheIO
 
 
 class BaseHasher(ABC):
-    """a base hasher class"""
+
     def __init__(
         self,
-        hash_type: str = DefaultValues.dhash,
-        core_size: Union[Tuple[int, int], int] = DefaultValues.core_size,
-        threshold: int = DefaultValues.hash_threshold,
-        log_path: Path = DefaultValues.log_path,
-        cache_io: CacheIO = CacheIO(),
-        n_jobs: int = DefaultValues.n_jobs
+        settings: AppSettings,
+        cache_io: Optional[CacheIO] = None
     ):
         """
-
-        :param hash_type: type of hash algorithm to use
-        :param core_size: size of resizing image in algorithm, hash_size will be square of this value.
-            biggest core size makes details at image more important. So with equal threshold with different core size
-            same images can be duplicates or not duplicates
-        :param threshold: threshold in percentage for hemming distance. Files that have lower hemming distance will be
-            considered duplicates.
-        :param log_path: path to log file
+        :param settings: settings from defaults and cli
+        :param cache_io: a class for loading and saving cache
+        Find duplicates in source dir. For faster work with remote data used hashmaps.
         """
+        self.settings = settings
         self.logger = LoggerConfigurator.setup(
             name=self.__class__.__name__,
-            log_path=Path(log_path) / f"{self.__class__.__name__}.log" if log_path else None,
-            log_level=DefaultValues.log_level
+            log_path=Path(self.settings.log_path) / f"{self.__class__.__name__}.log" if self.settings.log_path else None,
+            log_level=self.settings.log_level
         )
 
-        self.hash_type = hash_type
-        self.core_size = core_size
-        self.threshold = threshold
-        self.cache_io = cache_io
-        self.n_jobs = n_jobs
+        self.hash_type = self.settings.method
+        self.core_size = self.settings.core_size
+        self.threshold = self.settings.hash_threshold
+        self.cache_io = cache_io or CacheIO(self.settings)
+        self.n_jobs = self.settings.n_jobs
+
     @staticmethod
     @abstractmethod
-    def compute_hash(image_path: Path, core_size: int = DefaultValues.core_size) -> np.ndarray:
+    def compute_hash(image_path: Path, core_size: int) -> np.ndarray:
         pass
+
+    def validate_hash_map(
+            self,
+            image_paths: Tuple[Path],
+            hash_map: Dict[Path, np.ndarray]
+    ) -> Tuple[bool, Dict[Path, np.ndarray]]:
+        """
+        :param image_paths: tuple of images paths
+        :param hash_map: current hash map
+
+        compares current hash map with all images paths. If there is no difference - returns True and hash map.
+        Else: check for missing paths in hash map and for obsolete paths in hash map. Updates hash map deleting
+        obsolete paths and adding missing paths in hash map. Return False and hash map.
+        """
+        paths_set = set(image_paths)
+        cached_set = set(hash_map.keys())
+
+        missing_paths = tuple(paths_set - cached_set)
+        obsolete_paths = cached_set - paths_set
+
+        if not missing_paths and not obsolete_paths:
+            self.logger.info(f"Cache matches disk 1:1 ({len(hash_map)} items).")
+            return True, hash_map
+
+        valid_cache = {path: hash_data for path, hash_data in hash_map.items() if path in paths_set}
+
+        if missing_paths:
+            self.logger.info(f"Syncing cache: calculating {len(missing_paths)} new images...")
+            new_hashes = self.update_hashes(missing_paths)
+            for path, hash_data in zip(missing_paths, new_hashes):
+                if hash_data is not None:
+                    valid_cache[path] = hash_data
+
+        return False, valid_cache
+
+    def update_hashes(self, image_paths: Tuple[Path, ...]) -> list:
+        """
+        :param image_paths: tuple of images paths
+        Updating and returns a generated hash list for image_paths using multiprocessing
+        """
+        hash_func = partial(self.__class__.compute_hash, core_size=self.core_size)
+
+        with ProcessPoolExecutor(max_workers=self.n_jobs) as executor:
+            hashes = list(executor.map(hash_func, image_paths))
+
+        return hashes
 
     def get_hashmap(self, image_paths: Tuple[Path]) -> Dict[Path, np.ndarray]:
         """
         :param image_paths: list of images paths
         creating a dict with image path's and their hashes
         """
+        if not image_paths:
+            return {}
+
         image_count = len(image_paths)
         filename = self.cache_io.generate_cache_filename(
             image_paths[0].parent.resolve(),
             hash_type=self.hash_type,
-            core_size=self.core_size)
+            core_size=self.core_size,
+            cache_name=self.settings.cache_name
+        )
 
-        cache_file_name = DefaultValues.cache_file_path / filename
+        cache_file_name = self.settings.cache_file_path / filename
         cache_file_name.parent.mkdir(parents=True, exist_ok=True)
 
         hash_map = self.cache_io.load(cache_file_name)
+
         if hash_map:
-            return hash_map
+            is_valid, valid_hash_map = self.validate_hash_map(image_paths, hash_map)
+            if is_valid:
+                return hash_map
+            else:
+                self.cache_io.save(valid_hash_map, cache_file_name)
+                self.logger.info(f"Hash map updated: {len(valid_hash_map)} total valid hashes.")
+                return valid_hash_map
 
         self.logger.info(f"Building hashmap in parallel using {self.n_jobs} workers for {image_count} images...")
-        hash_func = partial(self.__class__.compute_hash, core_size=self.core_size)
 
-        with ProcessPoolExecutor(max_workers=self.n_jobs) as executor:
-            hashes = list(executor.map(hash_func, image_paths))
-
+        hashes = self.update_hashes(image_paths)
         hash_map = {
             path: h for path, h in zip(image_paths, hashes)
             if h is not None
@@ -125,50 +174,48 @@ class BaseHasher(ABC):
 
     @core_size.setter
     def core_size(self, value: Union[Tuple[int, int], int, float, str]) -> None:
-        """
-        stups hash size, converts into int type
-        :param value: size of hash. Using for resizing an image
-        """
-        if isinstance(value, int):
-            self._core_size = value
-        elif isinstance(value, (float, str)):
-            try:
-                self._core_size = int(value)
-            except TypeError:
-                self.logger.error(f"hash size must be int, got {type(value)}")
-                raise TypeError(f"hash size must be int, got {type(value)}")
-        elif isinstance(value, tuple):
-            self._core_size = value[0] if value[0] >= 0 else value[1]
-        else:
-            self.logger.error(f"hash size must be int or tuple, got {type(value)}")
-            raise TypeError(f"hash size must be int or tuple, got {type(value)}")
+        """Sets core size and triggers threshold bits recalculation"""
+        try:
+            if isinstance(value, tuple):
+                new_size = int(value[0]) if value[0] > 0 else int(value[1])
+            else:
+                new_size = int(float(value))
+
+            self._core_size = new_size
+
+            if hasattr(self, '_threshold_pct'):
+                self._recalculate_threshold_bits(self._threshold_pct)
+
+        except (ValueError, TypeError, IndexError) as e:
+            self.logger.error(f"Invalid core_size type: {type(value)}. Using default.")
+            raise TypeError(f"core_size must be convertible to int") from e
 
     @property
     def threshold(self) -> int:
+        """Returns distance threshold in BITS (used in find_duplicates)"""
         return self._threshold
 
     @threshold.setter
-    def threshold(self, value: Union[float, int]) -> None:
-        """
-        setting a threshold value in percentage. If value is not float type - trying to convert it to float.
-        :param value: float or int minimal value in percents that means an image is not a duplicate of comparing image
-        """
-
+    def threshold(self, value: Union[float, int, str]) -> None:
+        """Sets threshold as PERCENTAGE and calculates bits"""
         try:
-            value = int(value)
-        except TypeError:
-            self.logger.error(f"threshold must be float, got {type(value)}")
-            raise TypeError(f"threshold must be float, got {type(value)}")
-        except ValueError:
-            self.logger.error(f"threshold must be real number, got {type(value)}")
-            raise TypeError(f"threshold must be float, got {type(value)}")
+            pct_value = float(value)
+        except (ValueError, TypeError) as e:
+            self.logger.error(f"Threshold must be a number, got {type(value)}")
+            raise ValueError(f"Invalid threshold value: {value}") from e
 
-        if not (0 <= value <= DefaultValues.max_percentage):
-            self.logger.error(f"threshold must be between 0 and 100, got {value}")
-            raise ValueError(f"threshold must be between 0 and 100, got {type(value)}")
+        if not (0 <= pct_value <= self.settings.max_percentage):
+            self.logger.error(f"Threshold percentage out of range [0-100]: {pct_value}")
+            raise ValueError(f"Threshold must be between 0 and 100")
 
+        self._threshold_pct = pct_value
+        self._recalculate_threshold_bits(pct_value)
+
+    def _recalculate_threshold_bits(self, percentage: float) -> None:
+        """Internal helper to calculate bits based on current core_size"""
         hash_sqr = self.core_size * self.core_size
-        self._threshold = int(hash_sqr * (value / DefaultValues.max_percentage))
+        self._threshold = int(hash_sqr * (percentage / self.settings.max_percentage))
+        self.logger.debug(f"Threshold recalculated: {percentage}% of {hash_sqr} bits = {self._threshold} bits")
 
     @property
     def n_jobs(self) -> int:

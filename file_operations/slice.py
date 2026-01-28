@@ -1,7 +1,6 @@
 import argparse
 
 from const_utils.arguments import Arguments
-from const_utils.default_values import DefaultValues
 from const_utils.parser_help import HelpStrings
 from file_operations.file_operation import FileOperation
 from file_operations.file_remover import FileRemoverMixin
@@ -12,13 +11,13 @@ class SliceOperation(FileOperation, FileRemoverMixin):
     """Slice the files that match a pattern from source directory to target directory"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.step_sec: float = kwargs.get("step_sec", DefaultValues.step_sec)
-        self.suffix: str = kwargs.get('type', DefaultValues.type)
-        self.remove: bool = kwargs.get('remove', DefaultValues.remove)
+        self.step_sec: float = kwargs.get("step_sec", self.settings.step_sec)
+        self.suffix: str = kwargs.get('type', self.settings.suffix)
+        self.remove: bool = kwargs.get('remove', self.settings.remove)
         self.slicer: VideoSlicer = VideoSlicer()
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
+    def add_arguments(settings, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(Arguments.dst, help=HelpStrings.dst)
         parser.add_argument(
             Arguments.remove, Arguments.rm,
@@ -28,12 +27,12 @@ class SliceOperation(FileOperation, FileRemoverMixin):
         parser.add_argument(
             Arguments.type, Arguments.t,
             help=HelpStrings.type,
-            default=DefaultValues.type
+            default=settings.suffix
         )
         parser.add_argument(
             Arguments.step_sec, Arguments.step,
             help=HelpStrings.step_sec,
-            default=DefaultValues.step_sec
+            default=settings.step_sec
         )
 
     def do_task(self):

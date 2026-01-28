@@ -1,10 +1,7 @@
 import argparse
-from pathlib import Path
-from typing import List
-
 from const_utils.arguments import Arguments
 from const_utils.copmarer import Constants
-from const_utils.default_values import DefaultValues
+from const_utils.default_values import AppSettings
 from const_utils.parser_help import HelpStrings
 from file_operations.file_operation import FileOperation
 from file_operations.file_remover import FileRemoverMixin
@@ -22,34 +19,27 @@ class DedupOperation(FileOperation, FileRemoverMixin):
             Constants.image: ImageComparer
         }
 
-        self.filetype = kwargs.get("filetype", DefaultValues.image)
-        self.action = kwargs.get("action", DefaultValues.action)
-        self.method = kwargs.get("method", DefaultValues.dhash)
-        self.remove = kwargs.get("remove", DefaultValues.remove)
-        self.comparer: ImageComparer = self.mapping[self.filetype](
-            method_name=self.method,
-            log_path = self.log_path,
-            threshold_percentage=int(kwargs.get("threshold", DefaultValues.hash_threshold)),
-            core_size = int(kwargs.get("core_size", DefaultValues.core_size)),
-            n_jobs = int(kwargs.get("n_jobs", DefaultValues.n_jobs))
-        )
+        self.filetype = kwargs.get("filetype", self.settings.filetype)
+        self.method = kwargs.get("method", self.settings.method)
+        self.remove = kwargs.get("remove", self.settings.remove)
+        self.comparer: ImageComparer = self.mapping[self.filetype](self.settings)
 
     @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
+    def add_arguments(settings: AppSettings, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             Arguments.threshold,
             help=HelpStrings.threshold,
-            default=DefaultValues.hash_threshold
+            default=settings.hash_threshold
         )
         parser.add_argument(
             Arguments.filetype,
             help=HelpStrings.filetype,
-            default=DefaultValues.image
+            default=settings.filetype
         )
         parser.add_argument(
             Arguments.method, Arguments.m,
             help=HelpStrings.method,
-            default=DefaultValues.dhash
+            default=settings.method
         )
         parser.add_argument(
             Arguments.remove, Arguments.rm,
@@ -59,14 +49,18 @@ class DedupOperation(FileOperation, FileRemoverMixin):
         parser.add_argument(
             Arguments.core_size,
             help=HelpStrings.core_size,
-            default=DefaultValues.core_size
+            default=settings.core_size
         )
         parser.add_argument(
             Arguments.n_jobs,
             help=HelpStrings.n_jobs,
-            default=DefaultValues.n_jobs
+            default=settings.n_jobs
         )
-
+        parser.add_argument(
+            Arguments.cache_name,
+            help=HelpStrings.cache_name,
+            default=None
+        )
 
     def do_task(self):
         """
@@ -82,5 +76,5 @@ class DedupOperation(FileOperation, FileRemoverMixin):
         """check if user wants to remove duplicates"""
         if not self.remove:
             user_choice = input("for deleting founded duplicate files type 'delete': ")
-            return user_choice.lower() in DefaultValues.confirm_choice
+            return user_choice.lower() in self.settings.confirm_choice
         return True

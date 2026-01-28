@@ -1,0 +1,18 @@
+{
+  "remove": false,
+  "pattern": [],
+  "repeat": false,
+  "sleep": 60,
+  "suffix": ".jpg",
+  "step_sec": 5,
+  "log_path": "./log",
+  "log_level": "INFO",
+  "filetype": "image",
+  "method": "dhash",
+  "hash_threshold": 10,
+  "confirm_choice": ["delete", "вудуеу", "yes", "y", "true", "t", "1"],
+  "core_size": 16,
+  "n_jobs":  20,
+  "cache_file_path": "./cache",
+  "cache_name": null
+}

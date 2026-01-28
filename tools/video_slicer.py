@@ -1,9 +1,4 @@
-from ast import Tuple
 from pathlib import Path
-
-from const_utils.default_values import DefaultValues
-from logger.log_level_mapping import LevelMapping
-from logger.logger import LoggerConfigurator
 import cv2
 
 class VideoSlicer:

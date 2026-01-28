@@ -287,3 +287,4 @@ pyrightconfig.json
 /start_tasks.sh
 /log/
 /cache/
+/tst_commands.py

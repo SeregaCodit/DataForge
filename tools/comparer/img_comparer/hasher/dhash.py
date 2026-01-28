@@ -4,14 +4,14 @@ from typing import Union
 import cv2
 import numpy as np
 
-from const_utils.default_values import DefaultValues
+# from const_utils.default_values import DefaultValues
 from tools.comparer.img_comparer.hasher.base_hasher import BaseHasher
 
 class DHash(BaseHasher):
     """dHash compare algorithm"""
 
     @staticmethod
-    def compute_hash(image_path: Path, core_size: int = DefaultValues.core_size) -> Union[np.ndarray, None]:
+    def compute_hash(image_path: Path, core_size: int) -> Union[np.ndarray, None]:
         image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
         if image is None:
