@@ -15,26 +15,16 @@ from tools.cache import CacheIO
 
 
 class BaseHasher(ABC):
-    """a base hasher class"""
+
     def __init__(
         self,
         settings: AppSettings,
-        # hash_type: str = DefaultValues.method,
-        # core_size: Union[Tuple[int, int], int] = DefaultValues.core_size,
-        # threshold: int = DefaultValues.hash_threshold,
-        # log_path: Path = DefaultValues.log_path,
         cache_io: Optional[CacheIO] = None
-        # n_jobs: int = DefaultValues.n_jobs
     ):
         """
-
-        :param hash_type: type of hash algorithm to use
-        :param core_size: size of resizing image in algorithm, hash_size will be square of this value.
-            biggest core size makes details at image more important. So with equal threshold with different core size
-            same images can be duplicates or not duplicates
-        :param threshold: threshold in percentage for hemming distance. Files that have lower hemming distance will be
-            considered duplicates.
-        :param log_path: path to log file
+        :param settings: settings from defaults and cli
+        :param cache_io: a class for loading and saving cache
+        Find duplicates in source dir. For faster work with remote data used hashmaps.
         """
         self.settings = settings
         self.logger = LoggerConfigurator.setup(
@@ -54,30 +44,85 @@ class BaseHasher(ABC):
     def compute_hash(image_path: Path, core_size: int) -> np.ndarray:
         pass
 
-    def get_hashmap(self, image_paths: Tuple[Path]) -> Dict[Path, np.ndarray]:
+    def validate_hash_map(
+            self,
+            image_paths: Tuple[Path],
+            hash_map: Dict[Path, np.ndarray]
+    ) -> Tuple[bool, Dict[Path, np.ndarray]]:
         """
-        :param image_paths: list of images paths
-        creating a dict with image path's and their hashes
+        :param image_paths: tuple of images paths
+        :param hash_map: current hash map
+
+        compares current hash map with all images paths. If there is no difference - returns True and hash map.
+        Else: check for missing paths in hash map and for obsolete paths in hash map. Updates hash map deleting
+        obsolete paths and adding missing paths in hash map. Return False and hash map.
         """
-        image_count = len(image_paths)
-        filename = self.cache_io.generate_cache_filename(
-            image_paths[0].parent.resolve(),
-            hash_type=self.hash_type,
-            core_size=self.core_size)
+        paths_set = set(image_paths)
+        cached_set = set(hash_map.keys())
 
-        cache_file_name = self.settings.cache_file_path / filename
-        cache_file_name.parent.mkdir(parents=True, exist_ok=True)
+        missing_paths = tuple(paths_set - cached_set)
+        obsolete_paths = cached_set - paths_set
 
-        hash_map = self.cache_io.load(cache_file_name)
-        if hash_map:
-            return hash_map
+        if not missing_paths and not obsolete_paths:
+            self.logger.info(f"Cache matches disk 1:1 ({len(hash_map)} items).")
+            return True, hash_map
 
-        self.logger.info(f"Building hashmap in parallel using {self.n_jobs} workers for {image_count} images...")
+        valid_cache = {path: hash_data for path, hash_data in hash_map.items() if path in paths_set}
+
+        if missing_paths:
+            self.logger.info(f"Syncing cache: calculating {len(missing_paths)} new images...")
+            new_hashes = self.update_hashes(missing_paths)
+            for path, hash_data in zip(missing_paths, new_hashes):
+                if hash_data is not None:
+                    valid_cache[path] = hash_data
+
+        return False, valid_cache
+
+    def update_hashes(self, image_paths: Tuple[Path, ...]) -> list:
+        """
+        :param image_paths: tuple of images paths
+        Updating and returns a generated hash list for image_paths using multiprocessing
+        """
         hash_func = partial(self.__class__.compute_hash, core_size=self.core_size)
 
         with ProcessPoolExecutor(max_workers=self.n_jobs) as executor:
             hashes = list(executor.map(hash_func, image_paths))
 
+        return hashes
+
+    def get_hashmap(self, image_paths: Tuple[Path]) -> Dict[Path, np.ndarray]:
+        """
+        :param image_paths: list of images paths
+        creating a dict with image path's and their hashes
+        """
+        if not image_paths:
+            return {}
+
+        image_count = len(image_paths)
+        filename = self.cache_io.generate_cache_filename(
+            image_paths[0].parent.resolve(),
+            hash_type=self.hash_type,
+            core_size=self.core_size,
+            cache_name=self.settings.cache_name
+        )
+
+        cache_file_name = self.settings.cache_file_path / filename
+        cache_file_name.parent.mkdir(parents=True, exist_ok=True)
+
+        hash_map = self.cache_io.load(cache_file_name)
+
+        if hash_map:
+            is_valid, valid_hash_map = self.validate_hash_map(image_paths, hash_map)
+            if is_valid:
+                return hash_map
+            else:
+                self.cache_io.save(valid_hash_map, cache_file_name)
+                self.logger.info(f"Hash map updated: {len(valid_hash_map)} total valid hashes.")
+                return valid_hash_map
+
+        self.logger.info(f"Building hashmap in parallel using {self.n_jobs} workers for {image_count} images...")
+
+        hashes = self.update_hashes(image_paths)
         hash_map = {
             path: h for path, h in zip(image_paths, hashes)
             if h is not None
