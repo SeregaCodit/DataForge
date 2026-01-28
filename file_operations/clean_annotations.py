@@ -1,4 +1,6 @@
 import argparse
+from pathlib import Path
+from typing import Union
 
 from const_utils.arguments import Arguments
 from const_utils.default_values import AppSettings
@@ -9,11 +11,15 @@ from file_operations.file_remover import FileRemoverMixin
 
 
 class CleanAnnotationsOperation(FileOperation, FileRemoverMixin):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.a_source = self.settings.a_source
 
     @staticmethod
     def add_arguments(settings: AppSettings, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             Arguments.a_suffix,
+            nargs="+",
             help=HelpStrings.a_suffix,
             default=settings.a_suffix,
         )
@@ -27,7 +33,7 @@ class CleanAnnotationsOperation(FileOperation, FileRemoverMixin):
     def do_task(self) -> None:
         self.logger.info(f"Checking for orphan annotations in {self.settings.a_source}")
         annotation_paths = self.get_files(
-            source_directory=self.settings.a_source,
+            source_directory=self.a_source,
             pattern=self.settings.a_suffix
         )
 
@@ -41,3 +47,19 @@ class CleanAnnotationsOperation(FileOperation, FileRemoverMixin):
                     self.logger.info(f"Removed {a_path.stem}")
 
         self.logger.info(f"Removed {orphans_removed} orphan annotations")
+
+    @property
+    def a_source(self) -> Path:
+        return self._a_source
+
+    @a_source.setter
+    def a_source(self, value: Union[Path, str, None]) -> None:
+        if isinstance(value, Path):
+            self._a_source = value
+        elif isinstance(value, str):
+            self._a_source = Path(value)
+        elif value is None:
+            self._a_source = self.source_directory
+        else:
+            self.logger.error(f"Invalid value for a_source: {value}")
+            raise TypeError(f"Invalid value for a_source, can be Union[Path, str, None], got {type(value)}")

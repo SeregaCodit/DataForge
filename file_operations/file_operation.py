@@ -37,7 +37,7 @@ class FileOperation(ABC):
         self.logger.info(f"Started with parameters: {kwargs}")
 
 
-    def get_files(self, source_directory: Path, pattern: Tuple[str]) -> Tuple[Path]:
+    def get_files(self, source_directory: Path, pattern: Union[Tuple[str], Tuple[str, ...]]) -> Tuple[Path]:
         """Get files from source directory that match a set of patterns"""
         files = set()
 
