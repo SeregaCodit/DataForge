@@ -4,10 +4,11 @@ from const_utils.arguments import Arguments
 from const_utils.default_values import AppSettings
 from const_utils.parser_help import HelpStrings
 from file_operations.file_operation import FileOperation
-from tests.test_file_operation import settings
+from file_operations.file_remover import FileRemoverMixin
 
 
-class CleanAnnotationsOperation(FileOperation):
+
+class CleanAnnotationsOperation(FileOperation, FileRemoverMixin):
 
     @staticmethod
     def add_arguments(settings: AppSettings, parser: argparse.ArgumentParser) -> None:
@@ -24,8 +25,19 @@ class CleanAnnotationsOperation(FileOperation):
 
 
     def do_task(self) -> None:
-        annotations = self.get_files(source_directory=self.settings.a_source, pattern=self.settings.a_suffix)
-        stems = set(a.stem for a in annotations)
-        existed_files = set(self.files_for_task)
-        stems_for_remove = stems - existed_files
+        self.logger.info(f"Checking for orphan annotations in {self.settings.a_source}")
+        annotation_paths = self.get_files(
+            source_directory=self.settings.a_source,
+            pattern=self.settings.a_suffix
+        )
 
+        image_stems = set(image.stem for image in self.files_for_task)
+
+        orphans_removed = 0
+        for a_path in annotation_paths:
+            if a_path.stem not in image_stems:
+                if self._remove_file(a_path):
+                    orphans_removed += 1
+                    self.logger.info(f"Removed {a_path.stem}")
+
+        self.logger.info(f"Removed {orphans_removed} orphan annotations")
