@@ -37,16 +37,17 @@ class FileOperation(ABC):
         self.logger.info(f"Started with parameters: {kwargs}")
 
 
-    def get_files(self) -> None:
+    def get_files(self, source_directory: Path, pattern: Union[Tuple[str], Tuple[str, ...]]) -> Tuple[Path]:
         """Get files from source directory that match a set of patterns"""
         files = set()
 
-        for p in self.pattern:
-            current_pattern_files = self.source_directory.glob(f"*{p}*")
+        for p in pattern:
+            current_pattern_files = source_directory.glob(f"*{p}*")
             files.update(current_pattern_files)
 
-        self.files_for_task = tuple(files)
-        self.logger.debug(f"Total files_for_task: {len(self.files_for_task)}")
+        files_for_task = tuple(files)
+        self.logger.debug(f"Total files_for_task: {len(files_for_task)}")
+        return files_for_task
 
     def check_source_directory(self) -> None:
         """Check if source directory is valid"""
@@ -67,7 +68,7 @@ class FileOperation(ABC):
         self.check_directories()
         while True:
             try:
-                self.get_files()
+                self.files_for_task = self.get_files(source_directory=self.source_directory, pattern=self.pattern)
 
                 if len(self.files_for_task) == 0 and self.repeat:
                     self.logger.info(f"No files found for task'{self.pattern}'. Wait for {self.sleep} seconds...")

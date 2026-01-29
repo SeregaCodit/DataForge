@@ -17,8 +17,9 @@ class AppSettings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="APP_",
-        json_file=Constants.config_file,
-        extra="ignore"
+        # json_file=Constants.config_file,
+        extra="ignore",
+        validate_assignment=True
     )
 
     remove: bool = Field(default=False)
@@ -37,6 +38,8 @@ class AppSettings(BaseSettings):
     n_jobs: int = Field(default=2, ge=1, le=multiprocessing.cpu_count())
     cache_file_path: Path = Field(default=Path("./cache"))
     cache_name: Optional[Path] = Field(default=None)
+    a_suffix: Tuple[str, ...] = Field(default_factory=tuple)
+    a_source: Optional[Path] = Field(default=None)
 
     @field_validator('core_size')
     @classmethod
@@ -45,12 +48,14 @@ class AppSettings(BaseSettings):
             raise ValueError(f"core_size must be a power of 2 (e.g., 8, 16, 32, 64...), got {value}")
         return value
 
-    @field_validator('log_path', 'cache_file_path', mode='before')
+    @field_validator("log_path", "cache_file_path", "a_source", mode='before')
     @classmethod
     def ensure_path(cls, value: Union[str, Path]) -> Path:
         if isinstance(value, str):
             return Path(value)
         return value
+
+
 
     @classmethod
     def load_config(cls, config_path: Path = Constants.config_file) -> "AppSettings":

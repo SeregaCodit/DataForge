@@ -14,5 +14,7 @@
   "core_size": 16,
   "n_jobs":  20,
   "cache_file_path": "./cache",
-  "cache_name": null
+  "cache_name": null,
+  "a_suffix": [".xml"],
+  "a_source": null
 }

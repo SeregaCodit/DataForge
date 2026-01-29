@@ -7,3 +7,4 @@ class Commands:
     slice: str = "slice"
     delete: str = "delete"
     dedup: str = "dedup"
+    clean_annotations: str = "clean-annotations"

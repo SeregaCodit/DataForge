@@ -10,7 +10,7 @@ from file_operations.deduplicate import DedupOperation
 from file_operations.delete import DeleteOperation
 from file_operations.move import MoveOperation
 from file_operations.slice import SliceOperation
-from logger.log_level_mapping import LevelMapping
+from file_operations.clean_annotations import CleanAnnotationsOperation
 
 
 class FileManager:
@@ -22,7 +22,8 @@ class FileManager:
             Commands.move: MoveOperation,
             Commands.slice: SliceOperation,
             Commands.delete: DeleteOperation,
-            Commands.dedup: DedupOperation
+            Commands.dedup: DedupOperation,
+            Commands.clean_annotations: CleanAnnotationsOperation
         }
         self.settings = AppSettings.load_config(Constants.config_file)
         self._setup_commands()

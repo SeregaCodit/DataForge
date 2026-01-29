@@ -14,6 +14,7 @@ if you don’t want the command works in a cycle, just don't use "-r" argument. 
 - **delete** - delete files that match patterns from source directory
 - **dedup** - find duplicates in source directory that matches a pattern. An image means a duplicate if it's hash has lower 
 Hamming distance with comparing image hash than threshold value. The threshold value setups in percentage and must be in range [0, 100]. Pay attention to core_size parameter: the lower value makes details at photo less important, and the higher value makes details mach important while comparing information at images. It’s implemented only dHash comparing method for now.
+- **clean-annotations** - find annotation files in directory that doesn't have corresponding files
 ## How to use:
 clone git repository:
 

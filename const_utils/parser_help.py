@@ -30,3 +30,6 @@ class HelpStrings:
     n_jobs: str = "A count of workers for CPU Bound tasks like a hashmap building"
     cache_name: str = ("A cache file name. If you don't set this parameter cache name will be generated automatically "
                        "with next signature: <cache_{path_hash}_d{folder_name}{hash_type}s{core_size}.pkl>")
+    a_suffix: str = "A suffix pattern for annotations"
+    a_source: str = ("A source directory to annotations. If None - that means annotations are in the same folder with"
+                     " images")

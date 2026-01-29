@@ -19,12 +19,14 @@ class FileRemoverMixin:
             raise TypeError(f'filepaths should be a list or a tuple or a Path, not {type(filepaths)}')
 
 
-    def _remove_file(self: LoggerProtocol, path: Path) -> None:
-        """deletes one received file"""
+    def _remove_file(self: LoggerProtocol, path: Path) -> bool:
+        """deletes one received file. Returns True or False if file was successfully removed or not"""
         if not path.is_file():
             self.logger.warning(f"{path} is not a file")
         try:
             path.unlink(missing_ok=True)
             self.logger.info(f"{path} removed")
+            return True
         except FileNotFoundError:
             self.logger.warning(f"{path} file not exists, skipping")
+            return False

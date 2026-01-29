@@ -31,10 +31,10 @@ def test_get_files(tmp_path, settings):
     dst = tmp_path / "dst"
     dst.mkdir()
     operation = MoveOperation(settings=settings, src=str(src), dst=str(dst), pattern=(".mp4", ".MP4", ".avi"))
-    operation.get_files()
+    files_for_task = operation.get_files(source_directory=operation.source_directory, pattern=operation.pattern)
 
-    assert len(operation.files_for_task) == 3
-    names = [file.name for file in operation.files_for_task]
+    assert len(files_for_task) == 3
+    names = [file.name for file in files_for_task]
     assert "video1.mp4" in names
     assert "video2.MP4" in names
     assert "video3.avi" in names
@@ -50,7 +50,7 @@ def test_move_files(tmp_path, settings):
     dst = tmp_path / "dst"
     dst.mkdir()
     operation = MoveOperation(settings=settings, src=str(src), dst=str(dst), pattern=(".mp4", ".avi"), repeat=False)
-    operation.get_files()
+    operation.files_for_task = operation.get_files(source_directory=operation.source_directory, pattern=operation.pattern)
 
     operation.do_task()
 

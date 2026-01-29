@@ -28,3 +28,5 @@ class Arguments:
     core_size: str = "--core_size"
     n_jobs: str = "--n_jobs"
     cache_name: str = "--cache_name"
+    a_suffix: str = "--a_suffix"
+    a_source: str = "--a_source"
