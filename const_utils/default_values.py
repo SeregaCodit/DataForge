@@ -40,6 +40,7 @@ class AppSettings(BaseSettings):
     cache_name: Optional[Path] = Field(default=None)
     a_suffix: Tuple[str, ...] = Field(default_factory=tuple)
     a_source: Optional[Path] = Field(default=None)
+    destination_type: Optional[str] = Field(default=None)
 
     @field_validator('core_size')
     @classmethod

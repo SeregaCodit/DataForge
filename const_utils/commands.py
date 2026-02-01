@@ -8,3 +8,4 @@ class Commands:
     delete: str = "delete"
     dedup: str = "dedup"
     clean_annotations: str = "clean-annotations"
+    convert_annotations: str = "convert-annotations"

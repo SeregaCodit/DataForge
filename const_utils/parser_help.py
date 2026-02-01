@@ -33,3 +33,4 @@ class HelpStrings:
     a_suffix: str = "A suffix pattern for annotations"
     a_source: str = ("A source directory to annotations. If None - that means annotations are in the same folder with"
                      " images")
+    destination_type: str = "A type of destination annotation format"
