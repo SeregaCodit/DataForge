@@ -5,7 +5,7 @@ from tools.annotation_converter.writer.base import BaseWriter
 
 
 class YoloWriter(BaseWriter):
-
+    """Implements writing annotation files for YOLO format"""
     def write(self, data: List[str], file_path: Path) -> None:
         file_path.parent.mkdir(parents=True, exist_ok=True)
 

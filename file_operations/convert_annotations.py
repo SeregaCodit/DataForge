@@ -11,6 +11,7 @@ from tools.annotation_converter.converter.voc_yolo_converter import VocYOLOConve
 
 class ConvertAnnotationsOperation(FileOperation):
     def __init__(self, settings: AppSettings, **kwargs):
+        """converts annotation formats from pattern to destination. You Can use only one value of pattern at the time"""
         super().__init__(settings, **kwargs)
         self.destination_type = kwargs.get('destination_type')
         self.converter_mapping = {

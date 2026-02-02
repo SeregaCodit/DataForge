@@ -10,6 +10,10 @@ from tools.annotation_converter.writer.yolo import YoloWriter
 
 
 class BaseConverter(ABC):
+    """
+    Base converter class. Based on the source and destination formats, selects reader and writer classes for
+        processing data
+    """
     def __init__(self, log_level: str = LevelMapping.debug, log_path: Optional[Path] = None):
 
         self._reader: Optional[BaseReader] = None

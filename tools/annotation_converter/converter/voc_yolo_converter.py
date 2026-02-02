@@ -15,6 +15,11 @@ class VocYOLOConverter(BaseConverter):
     DESTINATION_FORMAT = ".txt"
     CLASSES_FILE = "classes.txt"
     def __init__(self, tolerance: int = 6):
+        """
+        :param tolerance: an int value that determines to which decimal place to round a converted in YOLO
+            format coordinates. By default, it is 6 in YOLO format.
+        :type tolerance: int
+        """
         super().__init__()
 
         self.tolerance = tolerance
@@ -25,6 +30,13 @@ class VocYOLOConverter(BaseConverter):
 
     @staticmethod
     def _get_classes_worker(annotation_paths: Path, reader: BaseReader) -> Set[str]:
+        """
+        :param annotation_paths: paths to annotation files
+        :type annotation_paths: Path
+        :param reader: reader object for parsing annotations
+        :type reader: BaseReader
+        :return: a set with all object classes found in annotations
+        """
         try:
             data = reader.read(annotation_paths)
             annotation = data.get("annotation", {})
@@ -45,6 +57,28 @@ class VocYOLOConverter(BaseConverter):
             tolerance: int,
             suffix: str
     ) -> bool:
+        """
+        pipline for parsing annotations, recalculating annotated objects data to YOLO format and savin it in
+            destination path
+
+        :param file_path: path to annotation file
+        :type file_path: Path
+        :param destination_path: path to output annotation file
+        :type destination_path: Path
+        :param reader: reader object for parsing annotations
+        :type reader: BaseReader
+        :param writer: writer object for writing converted annotation files
+        :type writer: BaseWriter
+        :param class_mapping: mapping from class name to class id
+        :type class_mapping: Dict[str, int]
+        :param tolerance: an int value that determines to which decimal place to round a converted in YOLO
+            format coordinates.
+        :type tolerance: int
+        :param suffix: suffix to add to filename
+        :type suffix: str
+        :return: True if a file was successfully converted, else returns False
+
+        """
         data = reader.read(file_path)
 
         if data.get("annotation") is None:
@@ -76,8 +110,6 @@ class VocYOLOConverter(BaseConverter):
 
                 if name not in class_mapping:
                     continue
-
-
                 class_id = class_mapping[name]
 
                 # calculate yolo format cords
@@ -100,22 +132,28 @@ class VocYOLOConverter(BaseConverter):
                        f"{y_center:.{tolerance}f} "
                        f"{width:.{tolerance}f} "
                        f"{height:.{tolerance}f}")
-
                 converted_objects.append(row)
-
 
             except (KeyError, ValueError, TypeError):
                 continue
 
-
         converted_path = destination_path / f"{file_path.stem}{suffix}"
-
         writer.write(converted_objects, converted_path)
-
         return True
 
     def convert(self, file_paths: Tuple[Path], target_path: Path, n_jobs: int = 1) -> None:
-        # TODO: add file writing as multiprocessing
+        """
+        discover classes of annotated objects and writes them in classes file.
+        Run multiprocessing conversion and writing pipline
+
+        :param file_paths: list of annotation files
+        :type file_paths: Tuple[Path]
+        :param target_path: path to output annotation file directory
+        :type target_path: Path
+        :param n_jobs: number of workers
+        :type n_jobs: int
+        :return None
+        """
         count_to_convert = len(file_paths)
 
         if count_to_convert > 0:
@@ -146,26 +184,9 @@ class VocYOLOConverter(BaseConverter):
         with ProcessPoolExecutor(max_workers=n_jobs) as executor:
             converted_results = executor.map(worker_func, file_paths)
             converted_count = sum(converted_results)
-            # for source_path, yolo_data in zip(file_paths, executor.map(worker_func, file_paths)):
-            #     if yolo_data:
-            #         dest_file = target_path / (source_path.stem + self.DESTINATION_FORMAT)
-            #         self.writer.write(yolo_data, dest_file)
 
+        self.logger.info(f"Converted {converted_count}/{count_to_convert} annotations and saved in {target_path}")
 
-                # Зберігаємо файл класів (специфіка YOLO)
-        self.logger.info(f"Converted {converted_count}/{count_to_convert}"
-                         f" annotations and saved in {target_path}")
-        # writer_func = partial(
-        #     self.writer.__class__.write_worker,
-        #     target_path=target_path,
-        #     suffix=self.DESTINATION_FORMAT
-        # )
-        #
-        # self.logger.info(f"Saving annotations in {target_path}")
-        # with ProcessPoolExecutor(max_workers=n_jobs) as executor:
-        #     executor.map(writer_func, data)
-        #
-        # self.logger.info(f"Done")
         self.writer.write(self.objects, target_path / self.CLASSES_FILE)
         self.logger.info(f"Saved {self.CLASSES_FILE} in {target_path}")
 
