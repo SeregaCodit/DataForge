@@ -288,3 +288,4 @@ pyrightconfig.json
 /log/
 /cache/
 /tst_commands.py
+/.idea/DataForge.iml
