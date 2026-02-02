@@ -56,7 +56,17 @@ class AppSettings(BaseSettings):
             return Path(value)
         return value
 
-
+    @field_validator("n_jobs")
+    @classmethod
+    def ensure_n_jobs(cls, value: Union[int, str]) -> int:
+        if not isinstance(value, int):
+            return int(float(value))
+        elif value >= multiprocessing.cpu_count():
+            return multiprocessing.cpu_count() - 1
+        elif value < 1:
+            return 1
+        else:
+            return value
 
     @classmethod
     def load_config(cls, config_path: Path = Constants.config_file) -> "AppSettings":

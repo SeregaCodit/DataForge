@@ -7,11 +7,13 @@ import numpy as np
 
 from tools.annotation_converter.converter.base import BaseConverter
 from tools.annotation_converter.reader.base import BaseReader
+from tools.annotation_converter.writer.base import BaseWriter
 
 
 class VocYOLOConverter(BaseConverter):
     TARGET_FORMAT = ".xml"
     DESTINATION_FORMAT = ".txt"
+    CLASSES_FILE = "classes.txt"
     def __init__(self, tolerance: int = 6):
         super().__init__()
 
@@ -34,11 +36,19 @@ class VocYOLOConverter(BaseConverter):
             return set()
 
     @staticmethod
-    def _convert_worker(file_path: Path, reader: BaseReader, class_mapping: Dict[str, int], tolerance: int) -> List[str]:
+    def _convert_worker(
+            file_path: Path,
+            destination_path: Path,
+            reader: BaseReader,
+            writer: BaseWriter,
+            class_mapping: Dict[str, int],
+            tolerance: int,
+            suffix: str
+    ) -> bool:
         data = reader.read(file_path)
 
         if data.get("annotation") is None:
-            return []
+            return False
 
         annotation = data["annotation"]
 
@@ -49,7 +59,7 @@ class VocYOLOConverter(BaseConverter):
             if img_width == 0 or img_height == 0:
                 raise ValueError(f"Image size is zero in annotation {file_path}!")
         except (KeyError, ValueError, TypeError):
-            return []
+            return False
 
         annotated_objects = annotation.get("object", list())
 
@@ -57,7 +67,7 @@ class VocYOLOConverter(BaseConverter):
         if not isinstance(annotated_objects, list):
             annotated_objects = [annotated_objects]
 
-        converted_objects = list()
+        converted_objects: List[str] = list()
 
         for obj in annotated_objects:
             try:
@@ -92,13 +102,26 @@ class VocYOLOConverter(BaseConverter):
                        f"{height:.{tolerance}f}")
 
                 converted_objects.append(row)
+
+
             except (KeyError, ValueError, TypeError):
                 continue
-        return converted_objects
+
+
+        converted_path = destination_path / f"{file_path.stem}{suffix}"
+
+        writer.write(converted_objects, converted_path)
+
+        return True
 
     def convert(self, file_paths: Tuple[Path], target_path: Path, n_jobs: int = 1) -> None:
         # TODO: add file writing as multiprocessing
-        self.logger.info(f"Start converting annotations with {n_jobs} workers...")
+        count_to_convert = len(file_paths)
+
+        if count_to_convert > 0:
+            target_path.mkdir(parents=True, exist_ok=True)
+
+        self.logger.info(f"Start converting {count_to_convert} annotations with {n_jobs} workers...")
 
         classes_func = partial(self._get_classes_worker, reader=self.reader)
         with ProcessPoolExecutor(max_workers=n_jobs) as executor:
@@ -110,83 +133,42 @@ class VocYOLOConverter(BaseConverter):
 
         worker_func = partial(
             self._convert_worker,
+            destination_path=target_path,
             reader=self.reader,
+            writer=self.writer,
             class_mapping=class_mapping,
-            tolerance=self.tolerance
+            tolerance=self.tolerance,
+            suffix=self.DESTINATION_FORMAT
         )
 
+        self.logger.info(f"converting {count_to_convert} annotations with {n_jobs} workers...")
+        converted_count = 0
         with ProcessPoolExecutor(max_workers=n_jobs) as executor:
-            for source_path, yolo_data in zip(file_paths, executor.map(worker_func, file_paths)):
-                if yolo_data:
-                    dest_file = target_path / (source_path.stem + self.DESTINATION_FORMAT)
-                    self.writer.write(yolo_data, dest_file)
+            converted_results = executor.map(worker_func, file_paths)
+            converted_count = sum(converted_results)
+            # for source_path, yolo_data in zip(file_paths, executor.map(worker_func, file_paths)):
+            #     if yolo_data:
+            #         dest_file = target_path / (source_path.stem + self.DESTINATION_FORMAT)
+            #         self.writer.write(yolo_data, dest_file)
+
 
                 # Зберігаємо файл класів (специфіка YOLO)
-            self.writer.write(self.objects, target_path / "classes.txt")
+        self.logger.info(f"Converted {converted_count}/{count_to_convert}"
+                         f" annotations and saved in {target_path}")
+        # writer_func = partial(
+        #     self.writer.__class__.write_worker,
+        #     target_path=target_path,
+        #     suffix=self.DESTINATION_FORMAT
+        # )
+        #
+        # self.logger.info(f"Saving annotations in {target_path}")
+        # with ProcessPoolExecutor(max_workers=n_jobs) as executor:
+        #     executor.map(writer_func, data)
+        #
+        # self.logger.info(f"Done")
+        self.writer.write(self.objects, target_path / self.CLASSES_FILE)
+        self.logger.info(f"Saved {self.CLASSES_FILE} in {target_path}")
 
-    # def convert(self, file_path: Path) -> List[str]:
-    #     data = self.reader.read(file_path)
-    #
-    #     if data.get("annotation") is None:
-    #         return []
-    #
-    #     converted_objects = list()
-    #     annotation = data["annotation"]
-    #
-    #     try:
-    #         img_width = int(annotation["size"]["width"])
-    #         img_height = int(annotation["size"]["height"])
-    #
-    #         if img_width == 0 or img_height == 0:
-    #             self.logger.warning(f"Image size is zero in annotation {file_path}!")
-    #             raise ValueError(f"Image size is zero in annotation {file_path}!")
-    #     except (KeyError, ValueError, TypeError) as e:
-    #             self.logger.warning(f"Skipping {file_path.name}: Invalid image size metadata. Error: {e}")
-    #             return []
-    #
-    #     annotated_objects  = annotation.get("object", list())
-    #
-    #     # reader using xmltodict that returns a dict if there is just one object, if more - returns a list
-    #     if not isinstance(annotated_objects, list):
-    #         annotated_objects = [annotated_objects]
-    #
-    #     for obj in annotated_objects:
-    #         try:
-    #             # saving objectnames for classes.txt
-    #             name = obj["name"]
-    #
-    #             if name not in self.class_mapping:
-    #                 self.objects.append(name)
-    #                 self.class_mapping[name] = len(self.objects) - 1
-    #
-    #             class_id = self.class_mapping[name]
-    #
-    #             # calculate yolo format cords
-    #             bbox = obj["bndbox"]
-    #             xmin, ymin, xmax, ymax = (
-    #                 float(bbox["xmin"]), float(bbox["ymin"]),
-    #                 float(bbox["xmax"]), float(bbox["ymax"])
-    #             )
-    #
-    #             width = ((xmax - xmin) / img_width)
-    #             height = (ymax - ymin) / img_height
-    #             x_center = (xmin + xmax) / 2 / img_width
-    #             y_center = (ymin + ymax) / 2 / img_height
-    #
-    #             x_center, y_center, width, height = map(lambda x: np.clip(x, 0, 1),
-    #                                                     [x_center, y_center, width, height])
-    #
-    #             row = (f"{class_id} "
-    #                    f"{x_center:.{self.tolerance}f} "
-    #                    f"{y_center:.{self.tolerance}f} "
-    #                    f"{width:.{self.tolerance}f} "
-    #                    f"{height:.{self.tolerance}f}")
-    #
-    #             converted_objects.append(row)
-    #         except (KeyError, ValueError, TypeError) as e:
-    #             self.logger.warning(f"Skipping object in {file_path.name}: Missing or invalid bndbox data. Error: {e}")
-    #             continue
-    #     return converted_objects
 
     @property
     def tolerance(self) -> int:
