@@ -1,11 +1,10 @@
 import hashlib
 import pickle
 from pathlib import Path
-from typing import Union, Dict, BinaryIO, Optional
+from typing import Dict, Optional
 import numpy as np
 
 from const_utils.default_values import AppSettings
-from file_operations.file_remover import FileRemoverMixin
 from logger.logger import LoggerConfigurator
 from logger.logger_protocol import LoggerProtocol
 

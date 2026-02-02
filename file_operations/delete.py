@@ -2,7 +2,7 @@ import argparse
 
 from const_utils.default_values import AppSettings
 from file_operations.file_operation import FileOperation
-from file_operations.file_remover import FileRemoverMixin
+from tools.mixins.file_remover import FileRemoverMixin
 
 
 class DeleteOperation(FileOperation, FileRemoverMixin):
