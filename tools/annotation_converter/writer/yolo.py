@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 from tools.annotation_converter.writer.base import BaseWriter
 

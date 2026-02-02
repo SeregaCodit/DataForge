@@ -7,6 +7,7 @@ from const_utils.default_values import AppSettings
 from const_utils.parser_help import HelpStrings
 from file_operations.file_operation import FileOperation
 from tools.annotation_converter.converter.voc_yolo_converter import VocYOLOConverter
+from tools.annotation_converter.converter.yolo_voc_converter import YoloVocConverter
 
 
 class ConvertAnnotationsOperation(FileOperation):
@@ -15,7 +16,8 @@ class ConvertAnnotationsOperation(FileOperation):
         super().__init__(settings, **kwargs)
         self.destination_type = kwargs.get('destination_type')
         self.converter_mapping = {
-            (".xml", "yolo") : VocYOLOConverter
+            (".xml", "yolo") : VocYOLOConverter,
+            ("yolo", ".xml"): YoloVocConverter
         }
         self.converter = self.converter_mapping[(self.pattern[0], self.destination_type)]()
         self.n_jobs = kwargs.get('n_jobs', 1)
