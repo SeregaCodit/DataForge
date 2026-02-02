@@ -4,7 +4,6 @@ from typing import Union
 import cv2
 import numpy as np
 
-# from const_utils.default_values import DefaultValues
 from tools.comparer.img_comparer.hasher.base_hasher import BaseHasher
 
 class DHash(BaseHasher):

@@ -3,7 +3,7 @@ import time
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 
 from const_utils.default_values import AppSettings
 from logger.logger import LoggerConfigurator
@@ -21,7 +21,7 @@ class FileOperation(ABC):
         self.src: str = kwargs.get('src', '')
         self.dst: str = kwargs.get('dst', '')
         self.source_directory = Path(self.src)
-        self.target_directory = Path(self.dst)
+        self.target_directory = self.dst
         self.stop: bool = False
 
         # -----логування-----
@@ -54,7 +54,7 @@ class FileOperation(ABC):
         if not self.source_directory.exists():
             # print(f"[ERROR] Source path '{self.src}' does not exist.")
             self.logger.error(f"Source path '{self.src}' does not exist.")
-            raise FileNotFoundError
+            raise FileNotFoundError(f"Source path '{self.src}' does not exist.")
 
     def check_directories(self) -> None:
         """Check if source directory is valid and if target directory exists.
@@ -122,3 +122,19 @@ class FileOperation(ABC):
     @stop.setter
     def stop(self, value):
         self.__stop = value
+
+    @property
+    def target_directory(self):
+        return self._target_directory
+
+    @target_directory.setter
+    def target_directory(self, value: Union[Path, str, None]) -> None:
+        if value is None:
+            self._target_directory = self.source_directory
+        elif isinstance(value, Path):
+            self._target_directory = value
+        elif isinstance(value, str):
+            self._target_directory = Path(value)
+        else:
+            self.logger.error(f"Target directory '{value}' is not valid. Got type '{type(value)}'")
+            raise TypeError(f"Target directory '{value}' is not valid. Got type '{type(value)}'")

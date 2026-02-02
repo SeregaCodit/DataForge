@@ -5,7 +5,7 @@ from const_utils.default_values import AppSettings
 from const_utils.parser_help import HelpStrings as hs
 from const_utils.commands import Commands
 from const_utils.arguments import Arguments as arg
-# from const_utils.default_values import DefaultValues as defaults
+from file_operations.convert_annotations import ConvertAnnotationsOperation
 from file_operations.deduplicate import DedupOperation
 from file_operations.delete import DeleteOperation
 from file_operations.move import MoveOperation
@@ -13,7 +13,7 @@ from file_operations.slice import SliceOperation
 from file_operations.clean_annotations import CleanAnnotationsOperation
 
 
-class FileManager:
+class DataForge:
     """Class corresponding to CLI and launch command"""
     def __init__(self):
         self.parser = argparse.ArgumentParser(description="FileManager")
@@ -23,7 +23,8 @@ class FileManager:
             Commands.slice: SliceOperation,
             Commands.delete: DeleteOperation,
             Commands.dedup: DedupOperation,
-            Commands.clean_annotations: CleanAnnotationsOperation
+            Commands.clean_annotations: CleanAnnotationsOperation,
+            Commands.convert_annotations: ConvertAnnotationsOperation
         }
         self.settings = AppSettings.load_config(Constants.config_file)
         self._setup_commands()
@@ -65,5 +66,5 @@ class FileManager:
 
 if __name__ == "__main__":
 
-    app = FileManager()
+    app = DataForge()
     app.execute()
