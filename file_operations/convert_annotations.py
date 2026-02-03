@@ -16,10 +16,11 @@ class ConvertAnnotationsOperation(FileOperation):
         super().__init__(settings, **kwargs)
         self.destination_type = kwargs.get('destination_type')
         self.converter_mapping = {
-            (".xml", "yolo") : VocYOLOConverter,
-            ("yolo", ".xml"): YoloVocConverter
+            ("voc", "yolo") : VocYOLOConverter,
+            ("yolo", "voc"): YoloVocConverter
         }
         self.converter = self.converter_mapping[(self.pattern[0], self.destination_type)]()
+        self.pattern = self.converter.TARGET_FORMAT
         self.n_jobs = kwargs.get('n_jobs', 1)
 
 

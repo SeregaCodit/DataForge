@@ -25,4 +25,5 @@ class YoloVocConverter(BaseConverter):
         self.class_mapping: Dict[str, int] = dict()
 
     def convert(self, file_paths: Tuple[Path], target_path: Path, n_jobs: int = 1) -> None:
+        print(file_paths)
         pass

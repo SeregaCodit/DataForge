@@ -49,8 +49,8 @@ MAPPING = {
         "convert-annotations",
         "./media/annotated/",
         "--dst", "./media/yolo_anns/",
-        "-p", ".xml",
-        "--destination-type", "yolo"
+        "-p", "yolo",
+        "--destination-type", "voc"
     ]
 }
 
