@@ -4,7 +4,7 @@ from const_utils.copmarer import Constants
 from const_utils.default_values import AppSettings
 from const_utils.parser_help import HelpStrings
 from file_operations.file_operation import FileOperation
-from file_operations.file_remover import FileRemoverMixin
+from tools.mixins.file_remover import FileRemoverMixin
 from tools.comparer.img_comparer.img_comparer import ImageComparer
 
 

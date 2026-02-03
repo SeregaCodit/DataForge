@@ -4,7 +4,8 @@ from dataclasses import dataclass
 class Arguments:
     """Command arguments"""
     src: str = "src"
-    dst: str = "dst"
+    dst: str = "--dst"
+
     pattern: str = "--pattern"
     p: str = "-p"
     repeat: str = "--repeat"
@@ -30,3 +31,4 @@ class Arguments:
     cache_name: str = "--cache_name"
     a_suffix: str = "--a_suffix"
     a_source: str = "--a_source"
+    destination_type: str = "--destination-type"
