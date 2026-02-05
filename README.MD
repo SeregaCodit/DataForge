@@ -1,58 +1,68 @@
-# DataForge
+# DataForge 
+**DataForge** is a high-performance CLI tool designed to automate the preparation and management of machine learning datasets. It helps you transform raw and dirty data (like videos and unsorted images) into clean, balanced, and ready-to-train datasets with minimal effort.
 
-A simple way to automate working with datasets. You can set a time delay for automatic execution of your command.
+`📖 [Read the full documentation here](https://seregacodit.github.io/DataForge/)`
+### Key Features
+* **Parallel Processing:** uses multiprocessing to handle thousands of files quickly.
+* **Vectorized Calculations:** employs NumPy for ultra-fast image comparison.
+* **Smart Caching:** incremental caching (MD5-based) allows working with large datasets on NAS without re-calculating everything.
+* **Config:** Built with Pydantic v2 for safe and flexible settings via JSON or CLI.
 
-if you don’t want the command works in a cycle, just don't use "-r" argument. And it will be executed for one time.
+---
 
+### Available Commands
 
-## Available commands
-- **move** - move files from source directory to target directory
-- **slice** - slice video files to images from the source directory to the target directory. Also, you can set flag "--remove" or "-rm" for deleting a source video file after slicing
+* **`move`** — move files from source to target directory based on patterns.
+* **`slice`** — convert video files into sequences of images. Use `--remove` to delete the source video after a successful slice.
+* **`delete`** — safely remove files matching specific patterns.
+* **`dedup`** — find and remove visual duplicates using **dHash**.
+    * *Threshold:* information similarity limit (0-100%).
+    * *Core Size:* higher values (e.g., 32, 64) detect small changes (like a moving car), lower values (e.g., 8) ignore noise.
+* **`clean-annotations`** — automatically find and delete "orphan" annotation files (XML/TXT) that no longer have a corresponding image.
+* **`convert-annotations`** — convert dataset labels between formats (e.g., **Pascal VOC** to **YOLO**).
 
-- **delete** - delete files that match patterns from source directory
-- **dedup** - find duplicates in source directory that matches a pattern. An image means a duplicate if it's hash has lower 
-Hamming distance with comparing image hash than threshold value. The threshold value setups in percentage and must be in range [0, 100]. Pay attention to core_size parameter: the lower value makes details at photo less important, and the higher value makes details mach important while comparing information at images. It’s implemented only dHash comparing method for now.
-- **clean-annotations** - find annotation files in directory that doesn't have corresponding files
-- **convert-annotations** - converts annotations from source format to destination format
+---
 
-#### to see command syntax and arguments use:
-    python data_forge.py <command> -h
+### Automation & Intervals
+By default, commands run once. If you want to monitor a folder and process files as they appear, use the repeat flag:
+* Use **`-r`** to run the command in a cycle.
+* Set the delay between cycles with **`-s`** (seconds).
 
-## How to use:
-clone git repository:
+---
 
-    git clone https://github.com/SeregaCodit/AutoFileManager.git
+### Quick Start
 
-go to project directory:
+1. **Clone the repository:**
+```bash
+git clone https://github.com/SeregaCodit/DataForge.git
+cd DataForge
+```
 
-    cd path_to_project
-    
-create virtual environment and activate it:
-    
-    python -m venv .venv
-    
-install requirements :
-    
-    pip install -r requirements.txt
-    
-read the --help command for learn more about available commands and arguments:
-    
-for check available commands
+2. **Setup environment:**
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-    python data_forge.py --help 
+3. **Check usage:**
+```bash
+python data_forge.py --help             # See all commands
+python data_forge.py {command} --help   # See arguments for a specific command
+```
 
-for check the command usage and available arguments
+---
 
-    python data_forge.py {command} --help
+### Workflow
+For multiple tasks, you can modify `start_all_tasks.sh` and run them all in the background:
+```bash
+bash start_all_tasks.sh
+```
+To stop all running DataForge processes:
+```bash
+pkill -f data_forge.py
+```
 
-
-## What else?
-
-For more comfortable using FileManager with multiple tasks you can create an .sh file or modify [strat_all_tasks.sh](https://github.com/SeregaCodit/DataForge/blob/main/start_all_tasks.sh) with list of your commands. And run all of them just by one simple command:
-
-    bash path_to_file/start_all_tasks.sh
-
-for stop executing of all commands use:
-
-    pkill -f data_forge.py
-
+### Configuration
+You can manage all default settings in `config.json`. DataForge follows this priority:
+**CLI Arguments > config.json > Internal Defaults.**

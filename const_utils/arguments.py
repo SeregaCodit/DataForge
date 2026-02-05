@@ -5,7 +5,6 @@ class Arguments:
     """Command arguments"""
     src: str = "src"
     dst: str = "--dst"
-
     pattern: str = "--pattern"
     p: str = "-p"
     repeat: str = "--repeat"
@@ -32,3 +31,5 @@ class Arguments:
     a_suffix: str = "--a_suffix"
     a_source: str = "--a_source"
     destination_type: str = "--destination-type"
+    img_path: str = "--img_path"
+    extensions: str = "--ext"

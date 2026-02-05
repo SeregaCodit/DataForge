@@ -35,7 +35,8 @@ nav:
           - DHash: api/dhash.md
       - Annotation Converter:
           - Base Converter: api/converter.md
-          - Voc to Yolo Converter: api/voc_yolo_converter.md
+          - VOC to YOLO converter: api/voc_yolo_converter.md
+          - YOLO to VOC converter: api/yolo_voc_converter.md
   - CLI:
       - CLI launching: cli/data_forge.md
       - Default Settings: cli/default_values.md

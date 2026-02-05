@@ -6,25 +6,46 @@ from logger.log_level_mapping import LevelMapping
 from logger.logger import LoggerConfigurator
 from tools.annotation_converter.reader.base import BaseReader
 from tools.annotation_converter.reader.voc import XMLReader
+from tools.annotation_converter.reader.yolo import TXTReader
+from tools.annotation_converter.writer.base import BaseWriter
+from tools.annotation_converter.writer.voc import XMLWriter
 from tools.annotation_converter.writer.yolo import YoloWriter
 
 
 class BaseConverter(ABC):
     """
-    Base converter class. Based on the source and destination formats, selects reader and writer classes for
-        processing data
-    """
-    def __init__(self, log_level: str = LevelMapping.debug, log_path: Optional[Path] = None):
+    Base converter class. Based on the source and destination formats, defines reader and writer classes for
+        processing data, defines default source and destination annotation file suffixes
 
-        self._reader: Optional[BaseReader] = None
-        self._writer: Optional[YoloWriter] = None
+    """
+    def __init__(
+            self,
+            source_format: str,
+            dest_format: str,
+            log_level: str = LevelMapping.debug,
+            log_path: Optional[Path] = None,
+            **kwargs
+    ):
+
         self.reader_mapping = {
             ".xml": XMLReader,
+            ".txt": TXTReader
         }
 
         self.writer_mapping = {
             ".txt": YoloWriter,
+            ".xml": XMLWriter
         }
+
+        self.suffix_mapping = {
+            "voc": ".xml",
+            "yolo": ".txt"
+        }
+
+        self.source_suffix = self.suffix_mapping.get(source_format)
+        self.dest_suffix = self.suffix_mapping.get(dest_format)
+        self.reader = self.reader_mapping[self.source_suffix]()
+        self.writer = self.writer_mapping[self.dest_suffix]()
 
         self.logger = LoggerConfigurator.setup(
             name=self.__class__.__name__,
@@ -44,3 +65,11 @@ class BaseConverter(ABC):
     @reader.setter
     def reader(self, reader: BaseReader) -> None:
         self._reader = reader
+
+    @property
+    def writer(self) -> BaseWriter:
+        return self._writer
+
+    @writer.setter
+    def writer(self, writer: BaseWriter) -> None:
+        self._writer = writer

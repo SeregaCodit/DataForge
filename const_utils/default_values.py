@@ -1,7 +1,7 @@
 import json
 import multiprocessing
 
-from typing import Union, Tuple, Optional
+from typing import Union, Tuple, Optional, List
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -33,14 +33,15 @@ class AppSettings(BaseSettings):
     filetype: str = Field(default=Constants.image)
     method: str = Field(default=Constants.dhash)
     hash_threshold: int = Field(default=10, ge=0, le=100)
-    confirm_choice: tuple = Field(default=("delete", "вудуеу"))
-    core_size: int = Field(default=8, ge=8) # чи можна вказати що це має бути ступінь двійки?
+    confirm_choice: tuple = Field(default=("delete",))
+    core_size: int = Field(default=8, ge=8)
     n_jobs: int = Field(default=2, ge=1, le=multiprocessing.cpu_count())
     cache_file_path: Path = Field(default=Path("./cache"))
     cache_name: Optional[Path] = Field(default=None)
     a_suffix: Tuple[str, ...] = Field(default_factory=tuple)
     a_source: Optional[Path] = Field(default=None)
     destination_type: Optional[str] = Field(default=None)
+    extensions: Tuple[str, ...] = Field(default=(".jpg", ".jpeg,", ".png"))
 
     @field_validator('core_size')
     @classmethod
@@ -67,6 +68,17 @@ class AppSettings(BaseSettings):
             return 1
         else:
             return value
+
+    @field_validator("extensions")
+    @classmethod
+    def ensure_extensions(cls, value: Union[str, List[str]]) -> Tuple[str, ...]:
+        if isinstance(value, tuple):
+            return value
+        else:
+            try:
+                return tuple(value)
+            except TypeError as e:
+                raise TypeError(e)
 
     @classmethod
     def load_config(cls, config_path: Path = Constants.config_file) -> "AppSettings":

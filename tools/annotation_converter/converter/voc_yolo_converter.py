@@ -11,20 +11,16 @@ from tools.annotation_converter.writer.base import BaseWriter
 
 
 class VocYOLOConverter(BaseConverter):
-    TARGET_FORMAT = ".xml"
-    DESTINATION_FORMAT = ".txt"
     CLASSES_FILE = "classes.txt"
-    def __init__(self, tolerance: int = 6):
+    def __init__(self, source_format, dest_format, tolerance: int = 6, **kwargs):
         """
         :param tolerance: an int value that determines to which decimal place to round a converted in YOLO
             format coordinates. By default, it is 6 in YOLO format.
         :type tolerance: int
         """
-        super().__init__()
+        super().__init__(source_format, dest_format, **kwargs)
 
         self.tolerance = tolerance
-        self.reader = self.reader_mapping[self.TARGET_FORMAT]()
-        self.writer = self.writer_mapping[self.DESTINATION_FORMAT]()
         self.objects: list = list()
         self.class_mapping: Dict[str, int] = dict()
 
@@ -176,7 +172,7 @@ class VocYOLOConverter(BaseConverter):
             writer=self.writer,
             class_mapping=class_mapping,
             tolerance=self.tolerance,
-            suffix=self.DESTINATION_FORMAT
+            suffix=self.dest_suffix
         )
 
         self.logger.info(f"converting {count_to_convert} annotations with {n_jobs} workers...")

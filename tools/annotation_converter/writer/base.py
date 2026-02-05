@@ -8,5 +8,5 @@ class BaseWriter(ABC):
         pass
 
     @abstractmethod
-    def write(self, data: List[str], file_path: Path) -> dict:
+    def write(self, data, file_path: Path) -> dict:
         pass

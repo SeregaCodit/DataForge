@@ -36,8 +36,8 @@ MAPPING = {
     Commands.dedup: [
         "data_forge.py",
         "dedup",
-        # "./media/imgs/",
-        "/mnt/qnap/Staff/Naumenko/NotTheSkynet/img_dataset/",
+        "./media/imgs/",
+        # "/mnt/qnap/Staff/Naumenko/NotTheSkynet/img_dataset/",
         # "/home/pivden/PycharmProjects/yoloTrainer/saved_imgs/",
         "-p", ".jpg", ".png",
         "--filetype", "image",
@@ -49,8 +49,9 @@ MAPPING = {
         "convert-annotations",
         "./media/annotated/",
         "--dst", "./media/yolo_anns/",
-        "-p", ".xml",
-        "--destination-type", "yolo"
+        "-p", "yolo",
+        "--img_path", "./media/annotated/", # only for converting from yolo format
+        "--destination-type", "voc"
     ]
 }
 
@@ -59,6 +60,6 @@ if __name__ == "__main__":
     MAPPING[Commands.dedup].append("16")
 
 
-    sys.argv = MAPPING[Commands.move]
+    sys.argv = MAPPING[Commands.convert_annotations]
     app = DataForge()
     app.execute()
