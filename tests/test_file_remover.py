@@ -30,7 +30,7 @@ def test_remove_file_success(remover, tmp_path):
     test_file.write_text("content")
 
     assert test_file.exists()
-    result = remover._remove_file(test_file)
+    result = remover.remove_file(test_file)
 
     assert result is True
     assert not test_file.exists()
@@ -40,7 +40,7 @@ def test_remove_file_not_exists(remover, tmp_path):
     """Test removing a file that does not exist."""
     test_file = tmp_path / "non_existent.txt"
 
-    result = remover._remove_file(test_file)
+    result = remover.remove_file(test_file)
 
     # According to the code, it returns True because unlink(missing_ok=True) is used
     # and it logs a warning if it's not a file.
@@ -54,7 +54,7 @@ def test_remove_all_list(remover, tmp_path):
     file1.write_text("1")
     file2.write_text("2")
 
-    remover._remove_all([file1, file2])
+    remover.remove_all([file1, file2])
 
     assert not file1.exists()
     assert not file2.exists()
@@ -66,7 +66,7 @@ def test_remove_all_tuple(remover, tmp_path):
     file1.write_text("1")
     file2.write_text("2")
 
-    remover._remove_all((file1, file2))
+    remover.remove_all((file1, file2))
 
     assert not file1.exists()
     assert not file2.exists()
@@ -76,11 +76,11 @@ def test_remove_all_single_path(remover, tmp_path):
     file1 = tmp_path / "file1.txt"
     file1.write_text("1")
 
-    remover._remove_all(file1)
+    remover.remove_all(file1)
 
     assert not file1.exists()
 
 def test_remove_all_invalid_type(remover):
     """Test that _remove_all raises TypeError for invalid input."""
     with pytest.raises(TypeError, match="filepaths should be a list or a tuple or a Path"):
-        remover._remove_all("not a path")
+        remover.remove_all("not a path")

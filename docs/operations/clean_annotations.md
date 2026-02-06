@@ -1,1 +1,1 @@
-::: tools.mixins.file_remover.FileRemoverMixin
+::: file_operations.clean_annotations.CleanAnnotationsOperation

@@ -88,7 +88,7 @@ class SliceOperation(FileOperation, FileRemoverMixin):
                     continue
 
                 if self.remove:
-                    self._remove_all(file_path)
+                    self.remove_all(file_path)
 
 
     @property

@@ -74,7 +74,7 @@ class CleanAnnotationsOperation(FileOperation, FileRemoverMixin):
 
         for a_path in annotation_paths:
             if a_path.stem not in image_stems:
-                if self._remove_file(a_path):
+                if self.remove_file(a_path):
                     orphans_removed += 1
                     self.logger.info(f"Removed {a_path.stem}")
 

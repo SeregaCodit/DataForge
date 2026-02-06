@@ -1,7 +1,7 @@
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
-from typing import List, Dict, Set, Tuple
+from typing import List, Dict, Set, Tuple, Union
 
 import numpy as np
 
@@ -11,12 +11,29 @@ from tools.annotation_converter.writer.base import BaseWriter
 
 
 class VocYOLOConverter(BaseConverter):
+    """
+        A high-performance converter for dataset annotations from Pascal VOC (.xml) to YOLO (.txt).
+
+        This class implements a two-phase parallel processing pipeline:
+        1. Discovery Phase: Scans all files to build a consistent class mapping.
+        2. Execution Phase: Performs the actual coordinate normalization and saves the files.
+
+        Attributes:
+            CLASSES_FILE (str): The name of the output file containing the list of YOLO classes.
+            tolerance (int): Precision of the coordinates in the resulting YOLO files.
+            objects (list): A list of unique class names found during the discovery phase.
+            class_mapping (Dict[str, int]): A dictionary mapping class names to their YOLO IDs.
+        """
     CLASSES_FILE = "classes.txt"
     def __init__(self, source_format, dest_format, tolerance: int = 6, **kwargs):
         """
-        :param tolerance: an int value that determines to which decimal place to round a converted in YOLO
-            format coordinates. By default, it is 6 in YOLO format.
-        :type tolerance: int
+        Initializes the VOC to YOLO converter.
+
+        Args:
+            source_format (str): The extension of source files (e.g., '.xml').
+            dest_format (str): The extension of destination files (e.g., '.txt').
+            tolerance (int): Number of decimal places for coordinates. Defaults to 6.
+            **kwargs (dict): Additional parameters passed to the BaseConverter.
         """
         super().__init__(source_format, dest_format, **kwargs)
 
@@ -24,14 +41,20 @@ class VocYOLOConverter(BaseConverter):
         self.objects: list = list()
         self.class_mapping: Dict[str, int] = dict()
 
+
     @staticmethod
     def _get_classes_worker(annotation_paths: Path, reader: BaseReader) -> Set[str]:
         """
-        :param annotation_paths: paths to annotation files
-        :type annotation_paths: Path
-        :param reader: reader object for parsing annotations
-        :type reader: BaseReader
-        :return: a set with all object classes found in annotations
+        Multiprocessing worker for the Discovery Phase.
+
+        Reads a single annotation file and extracts all unique object names.
+
+        Args:
+           annotation_paths (Path): Path to the XML annotation file.
+           reader (BaseReader): The reader instance used to parse XML data.
+
+        Returns:
+           Set[str]: A set of unique class names found in the file.
         """
         try:
             data = reader.read(annotation_paths)
@@ -42,6 +65,7 @@ class VocYOLOConverter(BaseConverter):
             return {obj["name"] for obj in objects}
         except Exception:
             return set()
+
 
     @staticmethod
     def _convert_worker(
@@ -54,26 +78,22 @@ class VocYOLOConverter(BaseConverter):
             suffix: str
     ) -> bool:
         """
-        pipline for parsing annotations, recalculating annotated objects data to YOLO format and savin it in
-            destination path
+        Multiprocessing worker for the Execution Phase.
 
-        :param file_path: path to annotation file
-        :type file_path: Path
-        :param destination_path: path to output annotation file
-        :type destination_path: Path
-        :param reader: reader object for parsing annotations
-        :type reader: BaseReader
-        :param writer: writer object for writing converted annotation files
-        :type writer: BaseWriter
-        :param class_mapping: mapping from class name to class id
-        :type class_mapping: Dict[str, int]
-        :param tolerance: an int value that determines to which decimal place to round a converted in YOLO
-            format coordinates.
-        :type tolerance: int
-        :param suffix: suffix to add to filename
-        :type suffix: str
-        :return: True if a file was successfully converted, else returns False
+        Performs the core logic: reads XML, calculates YOLO-normalized coordinates
+        (center_x, center_y, width, height), and saves the resulting text file.
 
+        Args:
+           file_path (Path): Path to the source XML file.
+           destination_path (Path): Directory where the output file will be saved.
+           reader (BaseReader): Reader instance for XML parsing.
+           writer (BaseWriter): Writer instance for saving YOLO data.
+           class_mapping (Dict[str, int]): Map of class names to their integer IDs.
+           tolerance (int): Precision for rounding coordinates.
+           suffix (str): The file extension for the output file.
+
+        Returns:
+           bool: True if the file was successfully processed and saved.
         """
         data = reader.read(file_path)
 
@@ -137,18 +157,18 @@ class VocYOLOConverter(BaseConverter):
         writer.write(converted_objects, converted_path)
         return True
 
+
     def convert(self, file_paths: Tuple[Path], target_path: Path, n_jobs: int = 1) -> None:
         """
-        discover classes of annotated objects and writes them in classes file.
-        Run multiprocessing conversion and writing pipline
+        Orchestrates the batch conversion process using multiple processes.
 
-        :param file_paths: list of annotation files
-        :type file_paths: Tuple[Path]
-        :param target_path: path to output annotation file directory
-        :type target_path: Path
-        :param n_jobs: number of workers
-        :type n_jobs: int
-        :return None
+        Phase 1: Scans all files in parallel to create a unified 'classes.txt'.
+        Phase 2: Converts coordinates and saves files in parallel.
+
+        Args:
+            file_paths (Tuple[Path, ...]): Collection of source annotation files.
+            target_path (Path): Directory path for the converted output.
+            n_jobs (int): Number of parallel workers to use. Defaults to 1.
         """
         count_to_convert = len(file_paths)
 
@@ -158,6 +178,7 @@ class VocYOLOConverter(BaseConverter):
         self.logger.info(f"Start converting {count_to_convert} annotations with {n_jobs} workers...")
 
         classes_func = partial(self._get_classes_worker, reader=self.reader)
+
         with ProcessPoolExecutor(max_workers=n_jobs) as executor:
             classes = list(executor.map(classes_func, file_paths))
 
@@ -189,15 +210,26 @@ class VocYOLOConverter(BaseConverter):
 
     @property
     def tolerance(self) -> int:
+        """int: The number of decimal places for YOLO coordinates."""
         return self._tolerance
 
     @tolerance.setter
-    def tolerance(self, value: int):
+    def tolerance(self, value: Union[int, float, str]) -> None:
+        """
+        Sets the coordinate precision. Handles conversion from float or string if needed.
+
+        Args:
+            value Union[int, float, str]: The precision value.
+
+        Raises:
+            TypeError: If the value cannot be converted to an integer.
+        """
         if isinstance(value, int):
             self._tolerance = value
         else:
             try:
                 self._tolerance = int(float(value))
             except TypeError as e:
-                self.logger.warning(f"Can`t convert {value} to int from type {type(value)})\n{e}")
-                raise TypeError(e)
+                msg = f"Can`t convert {value} to int from type {type(value)})\n{e}"
+                self.logger.warning(msg)
+                raise TypeError(msg)

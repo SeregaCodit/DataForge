@@ -99,7 +99,7 @@ class DedupOperation(FileOperation, FileRemoverMixin):
         self.logger.info(f"Found {duplicates_count} duplicates in {len(self.files_for_task)} files")
 
         if duplicates_count > 0 and self.confirm_removing():
-                self._remove_all(duplicates)
+                self.remove_all(duplicates)
 
     def confirm_removing(self) -> bool:
         """

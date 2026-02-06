@@ -35,4 +35,4 @@ class DeleteOperation(FileOperation, FileRemoverMixin):
         This method calls the '_remove_all' helper from FileRemoverMixin
         to process the list of files found in the source directory.
         """
-        self._remove_all(self.files_for_task)
+        self.remove_all(self.files_for_task)

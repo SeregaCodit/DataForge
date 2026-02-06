@@ -6,7 +6,7 @@ from logger.logger_protocol import LoggerProtocol
 
 class FileRemoverMixin:
     """A helper class to delete files from the system."""
-    def _remove_all(self, filepaths: Union[List[Path], Tuple[Path], Path]) -> None:
+    def remove_all(self, filepaths: Union[List[Path], Tuple[Path], Path]) -> None:
         """Deletes all the files in the given iterable or path.
 
         Args:
@@ -18,16 +18,16 @@ class FileRemoverMixin:
         """
         if isinstance(filepaths, (list, tuple)):
             for path in filepaths:
-                self._remove_file(path)
+                self.remove_file(path)
 
         elif isinstance(filepaths, Path):
-            self._remove_file(filepaths)
+            self.remove_file(filepaths)
 
         else:
             raise TypeError(f'filepaths should be a list or a tuple or a Path, not {type(filepaths)}')
 
 
-    def _remove_file(self: LoggerProtocol, path: Path) -> bool:
+    def remove_file(self: LoggerProtocol, path: Path) -> bool:
         """Deletes one file from the system.
 
         Args:

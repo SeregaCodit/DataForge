@@ -37,6 +37,8 @@ nav:
           - Base Converter: api/base_converter.md
           - VOC to YOLO converter: api/voc_yolo_converter.md
           - YOLO to VOC converter: api/yolo_voc_converter.md
+      - Mixins:
+          - FileRemoverMixin: api/file_remover.md
   - CLI:
       - CLI launching: cli/data_forge.md
       - Default Settings: cli/default_values.md
