@@ -29,6 +29,7 @@ nav:
       - clean-annotations: operations/clean_annotations.md
       - convert-annotations: operations/convert_annotations.md
   - API Reference:
+      - Main: api/data_forge.md
       - Image Comparer: api/img_comparer.md
       - Hasher:
           - Base Hasher: api/base_hasher.md
