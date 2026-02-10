@@ -1,115 +1,82 @@
 import pytest
-import numpy as np
 import pandas as pd
+import numpy as np
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
 from tools.cache import CacheIO
-from const_utils.default_values import AppSettings
-
 
 @pytest.fixture
-def mock_settings():
-    """Provides mock AppSettings for testing CacheIO."""
-    settings = AppSettings(
-        log_path=Path("./test_log"),
-        cache_file_path=Path("./test_cache")
-    )
-    return settings
+def cache_io(settings):
+    return CacheIO(settings)
 
 
-@pytest.fixture
-def cache_io_instance(mock_settings):
-    """Provides a CacheIO instance with mock settings."""
-    return CacheIO(settings=mock_settings)
+def test_generate_cache_filename_auto(cache_io, tmp_path):
+    """Checks if automatic filename generation is stable and contains kwargs."""
+    folder = tmp_path / "my images"
+    folder.mkdir()
+
+    name = cache_io.generate_cache_filename(folder, None, method="dhash", size=16)
+
+    assert name.startswith("cache_")
+    assert "my_images" in name
+    assert "_method_dhash" in name
+    assert "_size_16" in name
+    assert name.endswith(".parquet")
 
 
-@pytest.fixture
-def temp_cache_file(tmp_path):
-    """Provides a temporary cache file path for testing."""
-    return tmp_path / "test_cache.parquet"
+def test_generate_cache_filename_manual(cache_io, tmp_path):
+    """Checks if manual name correctly appends version suffix."""
+    folder = tmp_path / "data"
+    manual = "custom_export"
+
+    name = cache_io.generate_cache_filename(folder, manual, size=32)
+
+    assert name == "custom_export__size_32.parquet"
 
 
-@pytest.fixture
-def sample_hash_map():
-    """Provides a sample hash map for testing."""
-    return {
-        Path("/path/to/file1.jpg"): np.array([True, False, True], dtype=bool),
-        Path("/path/to/file2.png"): np.array([False, True, False], dtype=bool),
+def test_save_and_load_dict(cache_io, tmp_path):
+    """Tests saving a dictionary of hashes and loading it back as a DataFrame."""
+    cache_file = tmp_path / "test_hashes.parquet"
+    test_data = {
+        Path("/tmp/img1.jpg"): np.array([True, False, True], dtype=bool),
+        Path("/tmp/img2.jpg"): np.array([False, False, True], dtype=bool)
     }
 
+    # Save
+    cache_io.save(test_data, cache_file)
+    assert cache_file.exists()
 
-def test_cache_io_init(cache_io_instance):
-    """Tests if CacheIO initializes correctly."""
-    assert isinstance(cache_io_instance, CacheIO)
-    assert cache_io_instance.settings is not None
-    assert cache_io_instance.logger is not None
-
-
-def test_save_empty_hash_map(cache_io_instance, temp_cache_file):
-    """Tests saving an empty hash map, which should not create a file."""
-    hash_map = {}
-    cache_io_instance.save(hash_map, temp_cache_file)
-    assert not temp_cache_file.exists()
+    # Load
+    df = cache_io.load(cache_file)
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) == 2
+    assert "path" in df.columns
+    assert "hash" in df.columns
 
 
-def test_save_valid_hash_map(cache_io_instance, temp_cache_file, sample_hash_map):
-    """Tests saving a valid hash map and checks if the file is created."""
-    cache_io_instance.save(sample_hash_map, temp_cache_file)
-    assert temp_cache_file.exists()
+def test_save_and_load_dataframe(cache_io, tmp_path):
+    """Tests saving and loading a native pandas DataFrame."""
+    cache_file = tmp_path / "stats.parquet"
+    df_original = pd.DataFrame({
+        "class_name": ["car", "dog"],
+        "area": [0.5, 0.1]
+    })
+
+    cache_io.save(df_original, cache_file)
+    df_loaded = cache_io.load(cache_file)
+
+    assert not df_loaded.empty
+    assert df_loaded.iloc[0]["class_name"] == "car"
+    assert df_loaded.iloc[1]["area"] == 0.1
 
 
-def test_load_non_existent_file(cache_io_instance, temp_cache_file):
-    """Tests loading from a cache file that does not exist."""
-    loaded_data = cache_io_instance.load(temp_cache_file)
-    assert loaded_data == {}
+def test_load_non_existent_file(cache_io, tmp_path):
+    """Ensures that loading a missing file returns an empty DataFrame."""
+    fake_path = tmp_path / "ghost.parquet"
+    df = cache_io.load(fake_path)
+    assert df.empty
 
 
-def test_load_damaged_file(cache_io_instance, temp_cache_file):
-    """Tests loading from a damaged cache file (simulated by EOFError)."""
-    temp_cache_file.write_text("corrupted data")
-    with patch('pandas.read_parquet', side_effect=EOFError):
-        loaded_data = cache_io_instance.load(temp_cache_file)
-        assert loaded_data == {}
-
-
-def test_load_valid_file(cache_io_instance, temp_cache_file, sample_hash_map):
-    """Tests loading from a valid cache file."""
-    cache_io_instance.save(sample_hash_map, temp_cache_file)
-    loaded_data = cache_io_instance.load(temp_cache_file)
-
-    assert len(loaded_data) == len(sample_hash_map)
-    for path, hash_array in sample_hash_map.items():
-        assert path in loaded_data
-        assert np.array_equal(loaded_data[path], hash_array)
-
-
-def test_generate_cache_filename_no_custom_name():
-    """Tests generating a cache filename without a custom name."""
-    source_path = Path("/home/user/images")
-    hash_type = "dhash"
-    core_size = 16
-    filename = CacheIO.generate_cache_filename(source_path, hash_type, core_size, None)
-    assert filename.startswith("cache_")
-    assert "_dimages" in filename
-    assert "dhash_s16.parquet" in filename
-
-
-def test_generate_cache_filename_with_custom_name():
-    """Tests generating a cache filename with a custom name."""
-    source_path = Path("/home/user/videos")
-    hash_type = "phash"
-    core_size = 32
-    custom_name = Path("my_video_cache")
-    filename = CacheIO.generate_cache_filename(source_path, hash_type, core_size, custom_name)
-    assert filename == "my_video_cache_phash_s32.parquet"
-
-
-def test_generate_cache_filename_with_custom_name_with_suffix():
-    """Tests generating a cache filename with a custom name that already includes the suffix."""
-    source_path = Path("/home/user/documents")
-    hash_type = "ahash"
-    core_size = 8
-    custom_name = Path("doc_cache.parquet")
-    filename = CacheIO.generate_cache_filename(source_path, hash_type, core_size, custom_name)
-    assert filename == "doc_cache_ahash_s8.parquet"
+def test_save_invalid_type(cache_io, tmp_path):
+    """Checks if passing invalid data types raises a TypeError."""
+    with pytest.raises(TypeError):
+        cache_io.save(["not", "a", "dict"], tmp_path / "fail.parquet")

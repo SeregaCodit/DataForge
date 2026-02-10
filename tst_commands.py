@@ -60,6 +60,6 @@ if __name__ == "__main__":
     MAPPING[Commands.dedup].append("16")
 
 
-    sys.argv = MAPPING[Commands.convert_annotations]
+    sys.argv = MAPPING[Commands.dedup]
     app = DataForge()
     app.execute()

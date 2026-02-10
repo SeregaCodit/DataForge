@@ -157,7 +157,12 @@ class BaseHasher(ABC):
 
         cache_file_name = self.settings.cache_file_path / filename
         cache_file_name.parent.mkdir(parents=True, exist_ok=True)
-        hash_map = self.cache_io.load(cache_file_name)
+        df = self.cache_io.load(cache_file_name)
+
+        hash_map = {
+            Path(row['path']): np.array(row['hash'], dtype=bool)
+            for _, row in df.iterrows()
+        }
 
         if hash_map:
             is_valid, valid_hash_map = self.validate_hash_map(image_paths, hash_map)
