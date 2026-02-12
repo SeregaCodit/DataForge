@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class ImageStatsKeys:
     """Constants for stats dictionary keys and default values."""
     path: str = "path"
+    im_path: str = "im_path"
     mtime: str = "mtime"
     class_name: str = "class_name"
     objects_count: str = "objects_count"
@@ -17,6 +18,7 @@ class ImageStatsKeys:
     has_neighbors: str = "has_neighbors"
     object_width: str = "object_width"
     object_height: str = "object_height"
+    object_aspect_ratio: str = "object_aspect_ratio"
     object_area: str = "object_area"
     object_relative_area: str = "object_relative_area"
     object_in_center: str = "object_in_center"

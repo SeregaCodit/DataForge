@@ -39,3 +39,4 @@ class HelpStrings:
                        "converting from yolo to other formats")
     margin: str = ("A threshold value of margin from any image border. If any side of object bbox cloaser that this"
                    "value to image boarder - object will be defined as truncated")
+    report_path: str = "A path to directory where reports will be stored"

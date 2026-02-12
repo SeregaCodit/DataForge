@@ -1,13 +1,14 @@
 import json
 import multiprocessing
 
-from typing import Union, Tuple, Optional, List
+from typing import Union, Tuple, Optional, List, Dict, Any
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
 from const_utils.copmarer import Constants
+from const_utils.stats_constansts import ImageStatsKeys
 from logger.log_level_mapping import LevelMapping
 
 
@@ -71,6 +72,54 @@ class AppSettings(BaseSettings):
     destination_type: Optional[str] = Field(default=None)
     extensions: Tuple[str, ...] = Field(default=(".jpg", ".jpeg,", ".png"))
     margin_threshold: int = Field(default=5, ge=0, le=100)
+    report_path: Path = Field(default=Path("./reports"))
+    img_dataset_report_schema: List[Dict[str, Any]] = Field(default=[
+        {
+            "title": "GEOMETRY",
+            "type": "numeric",
+            "columns": [
+                ImageStatsKeys.object_area,
+                ImageStatsKeys.object_relative_area,
+                ImageStatsKeys.object_width,
+                ImageStatsKeys.object_height,
+                ImageStatsKeys.object_aspect_ratio
+            ]
+        },
+        {
+            "title": "SPATIAL BIAS",
+            "type": "binary",
+            "columns": [
+                ImageStatsKeys.object_in_center,
+                ImageStatsKeys.object_in_top_side,
+                ImageStatsKeys.object_in_bottom_side,
+                ImageStatsKeys.object_in_left_side,
+                ImageStatsKeys.object_in_right_side,
+                ImageStatsKeys.object_in_left_top,
+                ImageStatsKeys.object_in_right_top,
+                ImageStatsKeys.object_in_left_bottom,
+                ImageStatsKeys.object_in_right_bottom
+            ]
+        },
+        {
+            "title": "TRUNCATION",
+            "type": "binary",
+            "columns": [
+                ImageStatsKeys.truncated_top,
+                ImageStatsKeys.truncated_bottom,
+                ImageStatsKeys.truncated_left,
+                ImageStatsKeys.truncated_right
+            ]
+        },
+        {
+            "title": "IMAGE QUALITY",
+            "type": "numeric",
+            "columns": [
+                ImageStatsKeys.im_brightness,
+                ImageStatsKeys.im_contrast,
+                ImageStatsKeys.im_blur_score
+            ]
+        }
+    ])
 
 
     @field_validator('core_size')
@@ -93,7 +142,7 @@ class AppSettings(BaseSettings):
         return value
 
 
-    @field_validator("log_path", "cache_file_path", "a_source", mode='before')
+    @field_validator("report_path", "log_path", "cache_file_path", "a_source", mode='before')
     @classmethod
     def ensure_path(cls, value: Union[str, Path]) -> Path:
         """

@@ -17,7 +17,7 @@ class ImageContentAnalyzer:
     """
 
     @staticmethod
-    def analyze_metrics(img_path: Path) -> Dict[str, float]:
+    def analyze_metrics(img_path: str) -> Dict[str, float]:
         """
         Calculates brightness, contrast, and blur score for an image file.
 
@@ -34,7 +34,10 @@ class ImageContentAnalyzer:
             Dict[str, float]: A dictionary containing calculated metrics.
                 Returns an empty dictionary if the image cannot be read.
         """
-        image = cv2.imread(str(img_path.resolve()))
+        try:
+            image = cv2.imread(str(img_path))
+        except Exception:
+            return {}
 
         if image is None:
             return {}

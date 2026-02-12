@@ -129,6 +129,7 @@ class FeatureExtractor:
                 ImageStatsKeys.has_neighbors: has_neighbors,
                 ImageStatsKeys.object_width: width,
                 ImageStatsKeys.object_height: height,
+                ImageStatsKeys.object_aspect_ratio: width / height if height > 0 else 0,
                 ImageStatsKeys.object_area: area,
                 ImageStatsKeys.object_relative_area: relative_area,
                 ImageStatsKeys.object_in_center: in_center,

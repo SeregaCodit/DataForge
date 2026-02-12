@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional, Dict, List
 
+from const_utils.stats_constansts import ImageStatsKeys
 from tools.annotation_converter.reader.base import BaseReader
 from tools.stats.base_stats import BaseStats
 from tools.stats.extractor import FeatureExtractor
@@ -15,6 +16,18 @@ class VOCStats(BaseStats):
     the reading of files and the extraction of geometric features for
     dataset analysis.
     """
+    _worker_image_map = {}
+
+    @classmethod
+    def _init_worker(cls, image_dict: Dict[str, str]):
+        """
+        Prepares a worker process by storing a shared image map in the class memory.
+
+        Args:
+            image_dict (Dict[str, str]): A dictionary mapping image names to their paths.
+        """
+        cls._worker_image_map = image_dict
+
     @staticmethod
     def _analyze_worker(
             file_path: Path,
@@ -42,9 +55,9 @@ class VOCStats(BaseStats):
 
             if not annotation_data:
                 return []
-
+            correspond_img_str = VOCStats._worker_image_map.get(file_path.stem)
             stat_data = FeatureExtractor.extract_features(file_path, annotation_data, margin_threshold)
-            pixel_data = ImageContentAnalyzer.analyze_metrics(file_path)
+            pixel_data = ImageContentAnalyzer.analyze_metrics(correspond_img_str)
 
             for obj in stat_data:
                 obj.update(pixel_data)

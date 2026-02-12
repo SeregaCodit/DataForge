@@ -20,6 +20,7 @@ class YoloVocConverter(BaseConverter):
 
     Attributes:
         CLASSES_FILE (str): Standard name for the file containing class names.
+        _worker_image_map (dict): A class-level dictionary used to store image paths for worker processes.
     """
     CLASSES_FILE = "classes.txt"
     _worker_image_map = {}

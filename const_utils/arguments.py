@@ -34,3 +34,4 @@ class Arguments:
     img_path: str = "--img_path"
     extensions: str = "--ext"
     margin: str = "--margin"
+    report_path: str = "--report_path"

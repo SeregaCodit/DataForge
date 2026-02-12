@@ -14,7 +14,7 @@ from tools.annotation_converter.reader.base import BaseReader
 from tools.annotation_converter.reader.voc import XMLReader
 from tools.annotation_converter.reader.yolo import TXTReader
 from tools.cache import CacheIO
-
+from tools.stats.dataset_reporter.image_reporter import ImageDatasetReporter
 
 
 class BaseStats(ABC):
@@ -31,7 +31,9 @@ class BaseStats(ABC):
             log_path: Optional[Path] = None,
             settings: Optional[AppSettings] = None,
             cache_io: Optional[CacheIO] = None,
-            **kwargs
+            reporter: Optional[ImageDatasetReporter] = None,
+            img_path: Optional[Union[Path, str]] = None,
+            extentions: Optional[Tuple[str, ...]] = None,
     ):
         """
         Initialize the stats class.
@@ -41,6 +43,7 @@ class BaseStats(ABC):
             log_level: (str): The lowest logging level print to (e.g., 'debug').
             **kwargs (dict): Additional parameters like 'img_path' or 'labels_path'.
         """
+
         self.reader_mapping = {
             ".xml": XMLReader,
             ".txt": TXTReader
@@ -50,18 +53,27 @@ class BaseStats(ABC):
             "voc": ".xml",
             "yolo": ".txt"
         }
+
         self.settings = settings
+        self.extensions = extentions
+        self.img_path = img_path
         self.margin_threshold: int = self.settings.margin_threshold
         self.reader = self.reader_mapping.get(source_format, None)
         self.source_suffix = self.suffix_mapping.get(source_format)
         self.reader = self.reader_mapping[self.source_suffix]()
         self.cache_io = cache_io or CacheIO(self.settings)
+        self.reporter = reporter or ImageDatasetReporter(settings=self.settings)
         self.n_jobs = self.settings.n_jobs
         self.logger = LoggerConfigurator.setup(
             name=self.__class__.__name__,
             log_level=log_level,
             log_path=Path(log_path) / f"{self.__class__.__name__}.log" if log_path else None
         )
+
+    @classmethod
+    @abstractmethod
+    def _init_worker(cls, images: Dict[str, str]) -> None:
+        pass
 
     @staticmethod
     @abstractmethod
@@ -72,7 +84,7 @@ class BaseStats(ABC):
             class_mapping: Optional[Dict[str, str]] = None
     ) -> List[Dict[str, str]]:
         pass
-
+    
     def get_features(
             self,
             file_paths: Tuple[Path, ...],
@@ -115,14 +127,19 @@ class BaseStats(ABC):
 
         if files_for_task:
             self.logger.info(f"Incremental update: processing {len(files_for_task)} files with {self.n_jobs} workers")
-
+            images = {img.stem: str(img.resolve()) for img in self.img_path.iterdir() if
+                      img.suffix.lower() in self.extensions}
             worker_func = partial(
                 self._analyze_worker,
                 reader=self.reader,
                 margin_threshold=self.margin_threshold,
                 class_mapping=class_mapping)
 
-            with ProcessPoolExecutor(max_workers=self.n_jobs) as executor:
+            with ProcessPoolExecutor(
+                    max_workers=self.n_jobs,
+                    initializer=self.__class__._init_worker,
+                    initargs=(images,)
+            ) as executor:
                 results = list(executor.map(worker_func, files_for_task))
 
             new_data = [item for sublist in results for item in sublist]
@@ -130,10 +147,11 @@ class BaseStats(ABC):
             if new_data:
                 df_new = pd.DataFrame(new_data)
                 mtime_map = {str(path): path.stat().st_mtime for path in files_for_task}
-                df_new[ImageStatsKeys.path] = df_new[ImageStatsKeys.path].map(mtime_map)
+                df_new[ImageStatsKeys.mtime] = df_new[ImageStatsKeys.path].map(mtime_map)
                 df_final = pd.concat([df_final, df_new], ignore_index=True)
 
             if files_for_task or (len(df_cached) != len(df_final)):
                 self.cache_io.save(df_final, cache_file)
 
         return df_final
+

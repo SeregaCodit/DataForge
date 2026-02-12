@@ -1,5 +1,6 @@
 import argparse
-from typing import Union, Dict
+from pathlib import Path
+from typing import Union, Dict, Tuple
 
 import pandas as pd
 
@@ -24,6 +25,8 @@ class StatsOperation(FileOperation):
     def __init__(self, settings: AppSettings, **kwargs):
         """Initializes the StatsOperation with settings and specific arguments."""
         super().__init__(settings, **kwargs)
+        self.extensions = kwargs.get("ext", self.settings.extensions)
+        self.img_path = kwargs.get('img_path')
         self.target_format: Union[str, None] = kwargs.get('target_format', self.settings.destination_type)
         self.stats_mapping: Dict[str, BaseStats.__subclasses__()] = {
             "yolo": YoloStats,
@@ -32,6 +35,8 @@ class StatsOperation(FileOperation):
         self.stats_method: BaseStats = self.stats_mapping[self.target_format](
             settings=self.settings,
             source_format =self.target_format,
+            img_path=self.img_path,
+            extentions=self.extensions
         )
 
     @staticmethod
@@ -55,6 +60,12 @@ class StatsOperation(FileOperation):
             help=HelpStrings.margin,
             default=settings.margin_threshold,
         )
+        parser.add_argument(
+            Arguments.report_path,
+            help=HelpStrings.report_path,
+            default=settings.report_path
+        )
+
 
     def do_task(self):
         """
@@ -76,6 +87,60 @@ class StatsOperation(FileOperation):
 
         self._show_stats(df=df)
 
+    @property
+    def img_path(self) -> Path:
+        """Path: Returns the directory path where images are stored."""
+        return self._img_path
+
+    @img_path.setter
+    def img_path(self, img_path: Union[Path, str, None]) -> None:
+        """
+        Sets the directory for images and validates the input.
+
+        Args:
+        img_path (Union[Path, str, None]): Path to annotated images folder.
+            If None, it uses YOLO annotations same path .
+
+        Raises:
+        TypeError: If the provided path is not a string or Path object.
+        """
+        if isinstance(img_path, Path):
+            self._img_path = img_path
+        elif isinstance(img_path, str):
+            self._img_path = Path(img_path)
+        elif img_path is None:
+            self._img_path = self.source_directory
+            self.logger.warning(f"Dataset images path is not defined. Set same annotations path: {self.source_directory}")
+        else:
+            msg = f"img_path must be Path or str, not {type(img_path)}"
+            self.logger.error(msg)
+            raise TypeError(msg)
+
+    @property
+    def extensions(self) -> Tuple[str, ...]:
+        """Tuple[str, ...]: Returns the supported image file extensions."""
+        return self._extensions
+
+    @extensions.setter
+    def extensions(self, value: Tuple[str, ...]) -> None:
+        """
+        Sets the valid image extensions for the converter.
+
+        Args:
+            value (Tuple[str, ...]): A tuple of extension strings (e.g., ('.jpg',)).
+
+        Raises:
+            TypeError: If the input cannot be converted into a tuple.
+        """
+        if isinstance(value, tuple):
+            self._extensions = value
+        else:
+            try:
+                self._extensions = tuple(value)
+            except TypeError as e:
+                msg = f"extensions must be convertable into tuple, got {type(value)}"
+                self.logger.error(msg)
+                raise TypeError(msg)
     def _show_stats(self, df: pd.DataFrame) -> None:
         """
         Displays a technical dataset report using DataFrame keys directly.
