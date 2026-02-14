@@ -1,6 +1,5 @@
 import pytest
 import pandas as pd
-import numpy as np
 from tools.stats.outlier_detector import OutlierDetector
 from const_utils.stats_constansts import ImageStatsKeys
 
@@ -16,6 +15,7 @@ def test_global_outlier_detection():
     """Tests if a global metric (like brightness) correctly identifies an outlier."""
     # 10 values, one is a massive spike (1000)
     data = {
+        "class_name": ["a"] * 10,
         "im_brightness": [100.0, 102.0, 98.0, 101.0, 105.0, 95.0, 100.0, 103.0, 99.0, 1000.0]
     }
     df = pd.DataFrame(data)
@@ -51,8 +51,9 @@ def test_class_specific_outlier_detection():
 def test_outlier_any_aggregation():
     """Tests if outlier_any flag is set if at least one feature is an outlier."""
     data = {
-        "col1": [1, 1, 100],  # outlier at index 2
-        "col2": [1, 1, 1]  # normal
+        "class_name": ["a"] * 6,
+        "col1": [1, 1, 100, 2, 0, 2 ],  # outlier at index 2
+        "col2": [1, 1, 1, 1, 1, 1]  # normal
     }
     df = pd.DataFrame(data)
     result = OutlierDetector.mark_outliers(df, ["col1", "col2"])
@@ -61,7 +62,7 @@ def test_outlier_any_aggregation():
     assert result.loc[0, "outlier_any"] == 0
 
 
-def test_data_integrity_types(create_test_df):
+def test_data_integrity_types():
     """Verifies that the output uses memory-efficient int8 types."""
     df = pd.DataFrame({"object_area": [1, 2, 3], "class_name": ["a", "a", "a"]})
     result = OutlierDetector.mark_outliers(df, ["object_area"])

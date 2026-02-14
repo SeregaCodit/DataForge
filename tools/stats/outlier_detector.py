@@ -19,8 +19,8 @@ class OutlierDetector:
         """
         Identifies and marks outliers for specified columns in a DataFrame.
 
-        The method calculates the mean and standard deviation for each column.
-        Values outside the range [mean - 3*std, mean + 3*std] are marked as 1.
+        The method calculates iqr for each column.
+        Values outside the range [q1 - 1.5 * iqr, q3 + 1.5 * iqr] are marked as 1.
         Columns starting with 'object_' are analyzed within each class group.
         Other columns are analyzed globally.
 
@@ -45,22 +45,17 @@ class OutlierDetector:
 
             outlier_column_name = f"{outlier_marker}{col}"
 
-            if col.startswith("object_"):
-                class_group = df.groupby(ImageStatsKeys.class_name)[col]
-                mean = class_group.transform("mean")
-                std = class_group.transform("std")
-                upper_limit = mean + 3 * std.values
-                lower_limit = mean - 3 * std.values
-            else:
-                mean = df[col].mean()
-                std = df[col].std()
-                upper_limit = mean + 3 * std
-                lower_limit = mean - 3 * std
+            class_group = df.groupby(ImageStatsKeys.class_name)[col]
+            stats: pd.DataFrame = class_group.quantile([0.25, 0.75]).unstack()
+            stats.columns = ["q1", "q3"]
+            stats["iqr"] = stats["q3"] - stats["q1"]
+            stats["upper_limit"] = stats["q3"] + 1.5 * stats["iqr"]
+            stats["lower_limit"] = np.clip(stats["q1"] - 1.5 * stats["iqr"], a_min=0, a_max=None)
 
+            upper_bounds = df[ImageStatsKeys.class_name].map(stats["upper_limit"])
+            lower_bounds = df[ImageStatsKeys.class_name].map(stats["lower_limit"])
+            df[outlier_column_name] = ((df[col] < lower_bounds) | (df[col] > upper_bounds)).astype("int8")
 
-            outlier_mask = (df[col].values > upper_limit) | (df[col].values < lower_limit)
-            df[outlier_column_name] = outlier_mask.astype("int8")
-
-        outliers = [col for col in df.columns if col.startswith(outlier_marker)]
-        df["outlier_any"] = df[outliers].any(axis=1).astype("int8")
+        outlier_cols = [col for col in df.columns if col. startswith(outlier_marker)]
+        df["outlier_any"] = df[outlier_cols].any(axis=1).astype("int8")
         return df

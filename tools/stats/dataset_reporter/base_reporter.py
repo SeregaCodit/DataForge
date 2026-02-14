@@ -46,8 +46,10 @@ class BaseDatasetReporter(ABC):
                 row = stats.loc[col]
                 outlier_col = f"outlier_{col}"
                 outliers_count = df[outlier_col].sum()
-                min_limit = np.clip(row["mean"] - 3 * row["std"], a_min=0, a_max=None)
-                max_limit = row["mean"] + 3 * row["std"]
+
+                iqr = row["75%"] - row["25%"]
+                min_limit = np.clip(row["25%"] - 1.5 * iqr, a_min=0, a_max=None)
+                max_limit = row["75%"] + 1.5 * iqr
 
                 lines.append(
                     f"  - {col:<25}:"
