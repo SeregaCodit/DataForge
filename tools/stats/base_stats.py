@@ -14,8 +14,7 @@ from tools.annotation_converter.reader.base import BaseReader
 from tools.annotation_converter.reader.voc import XMLReader
 from tools.annotation_converter.reader.yolo import TXTReader
 from tools.cache import CacheIO
-from tools.stats.dataset_reporter.image_reporter import ImageDatasetReporter
-from tools.stats.outlier_detector import OutlierDetector
+from services.outlier_detector import OutlierDetector
 
 
 class BaseStats(ABC):

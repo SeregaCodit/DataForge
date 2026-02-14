@@ -1,6 +1,5 @@
-import pytest
 import pandas as pd
-from tools.stats.outlier_detector import OutlierDetector
+from services.outlier_detector import OutlierDetector
 from const_utils.stats_constansts import ImageStatsKeys
 
 

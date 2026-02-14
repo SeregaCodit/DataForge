@@ -4,6 +4,7 @@ from typing import Union, List
 
 import numpy as np
 import pandas as pd
+from matplotlib.backends.backend_pdf import PdfPages
 
 from const_utils.default_values import AppSettings
 from logger.logger import LoggerConfigurator
@@ -19,6 +20,7 @@ class BaseDatasetReporter(ABC):
         log_level = settings.log_level
         self.schema = self.settings.img_dataset_report_schema
         self.report_path = self.settings.report_path
+        self.report_path.mkdir(parents=True, exist_ok=True)
 
         self.logger = LoggerConfigurator.setup(
             name=self.__class__.__name__,
@@ -29,6 +31,11 @@ class BaseDatasetReporter(ABC):
     @abstractmethod
     def show_console_report(self, df: pd.DataFrame, target_format: str) -> None:
         pass
+
+    @abstractmethod
+    def generate_visual_report(self, df: pd.DataFrame, destination: Union[Path, str, PdfPages]) -> None:
+        pass
+
 
     def _render_section(self, df: Union[pd.DataFrame, pd.Series], section: dict, total_objects: int) -> List[str]:
         title = section["title"]
