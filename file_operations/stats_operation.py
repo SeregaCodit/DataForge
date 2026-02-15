@@ -85,8 +85,12 @@ class StatsOperation(FileOperation):
             - Identifying any class imbalance issues.
             - Providing insights about the dataset that can help in model training and evaluation.
         """
-
-        df = self.stats_method.get_features(file_paths=self.files_for_task)
+        if self.target_format == "yolo":
+            classes_mapping  = self.stats_method.set_class_mapping(file_paths=self.files_for_task)
+            self.files_for_task = tuple(f for f in self.files_for_task if f.name != "classes.txt")
+        else:
+            classes_mapping = None
+        df = self.stats_method.get_features(file_paths=self.files_for_task, class_mapping=classes_mapping)
 
         if df.empty:
             self.logger.warning(f"No annotations found in {self.src}")

@@ -1,11 +1,12 @@
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, List
 
 import cv2
 
 
 
 class YoloToDict:
+
     @staticmethod
     def to_voc_dict(annotations: Iterable, correspond_img: str, class_mapping: dict) -> dict:
         image = cv2.imread(correspond_img)

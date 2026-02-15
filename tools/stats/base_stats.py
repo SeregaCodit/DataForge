@@ -195,3 +195,16 @@ class BaseStats(ABC):
         df['umap_y'] = embedding[:, 1]
 
         return df
+
+    def set_class_mapping(self, file_paths: Tuple[Path]):
+        classes_file = next((path for path in file_paths if path.name == "classes.txt"), None)
+        if classes_file is None:
+            self.logger.warning(
+                f"No classes file found at {file_paths[0].parent}, class names will be taken from annotations as is"
+            )
+
+        classes_mapping = self.reader.read(classes_file)
+        self.logger.info(f"Class mapping loaded with {len(classes_mapping)} entries")
+        classes_mapping = {value: key for key, value in classes_mapping.items()}
+        return classes_mapping
+

@@ -57,8 +57,8 @@ MAPPING = {
         "data_forge.py",
         "stats",
         "./media/annotated/",
-        "-p", ".xml",
-        "--destination-type", "voc",
+        "-p", ".txt",
+        "--destination-type", "yolo",
     ]
 }
 
@@ -67,6 +67,6 @@ if __name__ == "__main__":
     MAPPING[Commands.dedup].append("16")
 
 
-    sys.argv = MAPPING[Commands.convert_annotations]
+    sys.argv = MAPPING[Commands.stats]
     app = DataForge()
     app.execute()
