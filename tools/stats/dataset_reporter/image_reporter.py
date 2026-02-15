@@ -1,7 +1,6 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, List
 
-import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -11,23 +10,27 @@ from services.plotter import StatsPlotter
 
 
 class ImageDatasetReporter(BaseDatasetReporter):
-    def generate_visual_report(self, df: pd.DataFrame, destination: Union[Path, PdfPages]):
+    def generate_visual_report(
+            self,
+            df: pd.DataFrame,
+            features: List[str],
+            destination: Union[Path, PdfPages]
+    ):
         self.logger.info("Starting visual analytics pipeline...")
-        # TODO split this function to multiple srp functions
         class_col = ImageStatsKeys.class_name
 
         # 1. Підготовка списку числових фіч
-        exclude = {
-            class_col,
-            ImageStatsKeys.path,
-            ImageStatsKeys.mtime,
-            ImageStatsKeys.has_neighbors,
-            ImageStatsKeys.full_size,
-            ImageStatsKeys.objects_count
-        }
-
-        numeric_features = [c for c in df.select_dtypes(include=[np.number]).columns
-                            if c not in exclude and not c.startswith('outlier')]
+        # exclude = {
+        #     class_col,
+        #     ImageStatsKeys.path,
+        #     ImageStatsKeys.mtime,
+        #     ImageStatsKeys.has_neighbors,
+        #     ImageStatsKeys.full_size,
+        #     ImageStatsKeys.objects_count
+        # }
+        #
+        # numeric_features = [c for c in df.select_dtypes(include=[np.number]).columns
+        #                     if c not in exclude and not c.startswith('outlier')]
 
         # --- ГРАФІК 1: Розподіл класів ---
         StatsPlotter.plot_class_distribution(df, destination)
@@ -38,11 +41,11 @@ class ImageDatasetReporter(BaseDatasetReporter):
         # --- ГРАФІК 3: Аналіз зміщення (Class vs Features) ---
         # Створюємо One-Hot Encoding для класів
         class_dummies = pd.get_dummies(df[class_col], prefix='class').astype(int)
-        df_combined = pd.concat([df[numeric_features], class_dummies], axis=1)
+        df_combined = pd.concat([df[features], class_dummies], axis=1)
         full_corr = df_combined.corr()
 
         class_cols = [c for c in full_corr.columns if c.startswith('class_')]
-        bias_matrix = full_corr.loc[class_cols, numeric_features]
+        bias_matrix = full_corr.loc[class_cols, features]
 
         StatsPlotter.plot_correlation_matrix(
             bias_matrix, "Dataset Bias: Classes vs Features",
@@ -50,7 +53,7 @@ class ImageDatasetReporter(BaseDatasetReporter):
         )
 
         # --- ГРАФІКИ 4: Теплокарти та Внутрішня кореляція (Per Class) ---
-        all_class_corrs = df.groupby(class_col)[numeric_features].corr()
+        all_class_corrs = df.groupby(class_col)[features].corr()
 
         for name in sorted(df[class_col].unique()):
             class_df = df[df[ImageStatsKeys.class_name] == name]
@@ -73,7 +76,7 @@ class ImageDatasetReporter(BaseDatasetReporter):
                                                      f"corr_{name}.png")
 
         # --- ГРАФІК 5: t-SNE Manifold ---
-        StatsPlotter.plot_dataset_manifold(df, numeric_features, class_col, destination, n_jobs=self.settings.n_jobs)
+        StatsPlotter.plot_dataset_manifold(df, features, class_col, destination, n_jobs=self.settings.n_jobs)
 
     def show_console_report(self, df: pd.DataFrame, target_format: str) -> None:
         total_objects = len(df)

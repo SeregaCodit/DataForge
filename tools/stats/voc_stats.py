@@ -1,8 +1,10 @@
 from pathlib import Path
 from typing import Optional, Dict, List
 
+import numpy as np
+import pandas as pd
+
 from const_utils.stats_constansts import ImageStatsKeys
-from const_utils.xml_names import XMLNames
 from tools.annotation_converter.reader.base import BaseReader
 from tools.stats.base_stats import BaseStats
 from tools.stats.extractor import FeatureExtractor
@@ -18,6 +20,22 @@ class VOCStats(BaseStats):
     dataset analysis.
     """
     _worker_image_map = {}
+
+    @staticmethod
+    def get_umap_features(df: pd.DataFrame) -> List[str]:
+        exclude = {
+            ImageStatsKeys.class_name,
+            ImageStatsKeys.path,
+            ImageStatsKeys.mtime,
+            ImageStatsKeys.has_neighbors,
+            ImageStatsKeys.full_size,
+            ImageStatsKeys.objects_count
+        }
+
+        numeric_features = [c for c in df.select_dtypes(include=[np.number]).columns
+                            if c not in exclude and not c.startswith('outlier')]
+
+        return numeric_features
 
     @classmethod
     def _init_worker(cls, image_dict: Dict[str, str]):

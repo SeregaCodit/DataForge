@@ -33,7 +33,7 @@ class BaseDatasetReporter(ABC):
         pass
 
     @abstractmethod
-    def generate_visual_report(self, df: pd.DataFrame, destination: Union[Path, str, PdfPages]) -> None:
+    def generate_visual_report(self, df: pd.DataFrame, destination: Union[Path, str, PdfPages], features: List[str]) -> None:
         pass
 
 
@@ -76,6 +76,7 @@ class BaseDatasetReporter(ABC):
             self.logger.warning(f"Unknown section type '{section['type']}' for section '{title}'. Skipping.")
 
         return lines
+
 
     @property
     def report_path(self) -> Path:

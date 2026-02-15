@@ -4,7 +4,10 @@ from functools import partial
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Union, List
 
+import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from umap import UMAP
 
 from const_utils.default_values import AppSettings
 from const_utils.stats_constansts import ImageStatsKeys
@@ -83,6 +86,11 @@ class BaseStats(ABC):
     ) -> List[Dict[str, str]]:
         pass
 
+    @staticmethod
+    @abstractmethod
+    def get_umap_features(df: pd.DataFrame) -> List[str]:
+        pass
+
     def get_features(
             self,
             file_paths: Tuple[Path, ...],
@@ -157,8 +165,33 @@ class BaseStats(ABC):
 
 
                 df_final = OutlierDetector.mark_outliers(df_final, numeric_cols)
-
+                self.logger.info(f"computing UMAP coordinates for the entire dataset with {self.n_jobs} workers")
+                features = self.get_umap_features(df_final)
+                df_final = self.compute_umap_coords(df=df_final, features=features)
             if files_for_task or (len(df_cached) != len(df_final)):
                 self.cache_io.save(df_final, cache_file)
 
         return df_final
+
+
+    def compute_umap_coords(self, df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
+        """
+        Enterprise standard: Calculates UMAP coordinates for the ENTIRE dataset
+        and returns them as new columns.
+        """
+
+        x_data = df[features].fillna(0)
+        x_data = x_data.loc[:, x_data.var() > 0]
+
+        if x_data.shape[1] < 2:
+            return df
+
+        x_scaled = StandardScaler().fit_transform(x_data)
+        n_neighbors = int(np.clip(len(x_data) * 0.1, a_min=15, a_max=50))
+        reducer = UMAP(n_neighbors=n_neighbors, min_dist=0.1, n_components=2, n_jobs=self.n_jobs)
+        embedding = reducer.fit_transform(x_scaled)
+
+        df['umap_x'] = embedding[:, 0]
+        df['umap_y'] = embedding[:, 1]
+
+        return df

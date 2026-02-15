@@ -1,10 +1,6 @@
 import argparse
-import os
 from pathlib import Path
 from typing import Union, Dict, Tuple
-
-import numpy as np
-import pandas as pd
 
 from const_utils.arguments import Arguments
 from const_utils.default_values import AppSettings
@@ -101,7 +97,8 @@ class StatsOperation(FileOperation):
         self.reporter.show_console_report(df=df, target_format=self.target_format)
 
         report_path = FolderNamer.next_name(src=self.settings.report_path)
-        self.reporter.generate_visual_report(df=df, destination=report_path)
+        features = self.stats_method.get_umap_features(df=df)
+        self.reporter.generate_visual_report(df=df, destination=report_path, features=features)
 
     @property
     def img_path(self) -> Path:

@@ -1,5 +1,3 @@
-import matplotlib
-
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -7,14 +5,8 @@ import pandas as pd
 from pathlib import Path
 from typing import Union, Tuple, List, Optional
 from matplotlib.backends.backend_pdf import PdfPages
-from pandas.core.common import random_state
-from sklearn.preprocessing import StandardScaler
-from umap import UMAP
 
 from const_utils.stats_constansts import ImageStatsKeys
-
-
-# matplotlib.set_loglevel("WARNING")
 
 
 class StatsPlotter:
@@ -158,30 +150,13 @@ class StatsPlotter:
         if len(subset) < 10:
             return
 
-        x_data = subset[features].fillna(0)
-        x_data = x_data.loc[:, x_data.var() > 0]
-
-        if x_data.shape[1] < 2:
-            return
-
-        x_scaled = StandardScaler().fit_transform(x_data)
-
-        n_neighbors = int(np.clip(len(x_data) * 0.1, a_min=15, a_max=50))
-        reducer = UMAP(
-            n_neighbors=n_neighbors,
-            min_dist=0.1,
-            n_components=2,
-            random_state=None,
-            n_jobs=n_jobs
-        )
-        embedding = reducer.fit_transform(x_scaled)
-
         fig, ax = plt.subplots(figsize=figsize)
 
         num_colors = len(subset[class_col].unique())
 
         sns.scatterplot(
-            x=embedding[:, 0], y=embedding[:, 1],
+            x=df["umap_x"],
+            y=df["umap_y"],
             hue=subset[class_col],
             style=subset[class_col],
             palette=sns.color_palette("husl", num_colors),
