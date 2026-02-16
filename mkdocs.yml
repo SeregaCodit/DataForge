@@ -58,6 +58,9 @@ nav:
           - Base Stats: api/base_stats.md
           - Yolo Stats: api/yolo_stats.md
           - VOC Stats: api/voc_stats.md
+          - Reporter:
+                - Base Reporter: api/base_reporter.md
+                - Image Dataset Reporter: api/image_reporter.md
   - CLI:
       - CLI launching: cli/data_forge.md
       - Default Settings: cli/default_values.md

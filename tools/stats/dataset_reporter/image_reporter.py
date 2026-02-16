@@ -10,23 +10,45 @@ from services.plotter import StatsPlotter
 
 
 class ImageDatasetReporter(BaseDatasetReporter):
+    """
+    Implementation of BaseDatasetReporter for Computer Vision datasets.
+
+    This class orchestrates the complete reporting pipeline. It aggregates
+    geometric and pixel-level features to generate structured console logs,
+    spatial heatmaps, correlation matrices, and UMAP manifold projections.
+    """
     def generate_visual_report(
             self,
             df: pd.DataFrame,
             features: List[str],
             destination: Union[Path, PdfPages]
     ):
+        """
+        Orchestrates the visual analytics pipeline to create technical plots.
+
+        The pipeline includes:
+            1. Class distribution bar charts.
+            2. Geometric analysis (Area boxplots and Aspect Ratio violin plots).
+            3. Dataset Bias Matrix (Correlation between classes and features).
+            4. Per-class Spatial Density heatmaps (3x3 grid).
+            5. Per-class internal feature correlation matrices.
+            6. Global UMAP manifold projection.
+
+        Args:
+            df (pd.DataFrame): The extracted feature matrix.
+            features (List[str]): List of numeric columns for correlation and manifold analysis.
+            destination (Union[Path, PdfPages]): Output target (directory or PDF document).
+        """
         self.logger.info("Starting visual analytics pipeline...")
         class_col = ImageStatsKeys.class_name
 
-        # --- ГРАФІК 1: Розподіл класів ---
+        # class distribution
         StatsPlotter.plot_class_distribution(df, destination)
 
-        # --- ГРАФІК 2: Геометричний аналіз (Boxplots) ---
+        # boxplots for geometric features
         StatsPlotter.plot_geometry_analysis(df, destination)
 
-        # --- ГРАФІК 3: Аналіз зміщення (Class vs Features) ---
-        # Створюємо One-Hot Encoding для класів
+        # correlation bias between classes and features
         class_dummies = pd.get_dummies(df[class_col], prefix='class').astype(int)
         df_combined = pd.concat([df[features], class_dummies], axis=1)
         full_corr = df_combined.corr()
@@ -39,7 +61,7 @@ class ImageDatasetReporter(BaseDatasetReporter):
             destination, "corr_bias.png", annot_size=7
         )
 
-        # --- ГРАФІКИ 4: Теплокарти та Внутрішня кореляція (Per Class) ---
+        # heatpaps for spatial distribution of objects
         all_class_corrs = df.groupby(class_col)[features].corr()
 
         for name in sorted(df[class_col].unique()):
@@ -62,10 +84,20 @@ class ImageDatasetReporter(BaseDatasetReporter):
                 StatsPlotter.plot_correlation_matrix(c_matrix, f"Feature Correlation | {name}", destination,
                                                      f"corr_{name}.png")
 
-        # --- ГРАФІК 5: t-SNE Manifold ---
+        # UMAP manifold projection
         StatsPlotter.plot_dataset_manifold(df, features, class_col, destination, n_jobs=self.settings.n_jobs)
 
     def show_console_report(self, df: pd.DataFrame, target_format: str) -> None:
+        """
+        Aggregates dataset statistics and prints a structured technical summary.
+
+        Provides insights into object density, image quality metrics, and
+        detailed per-class geometry and spatial bias.
+
+        Args:
+            df (pd.DataFrame): The extracted feature matrix.
+            target_format (str): The annotation format (e.g., 'yolo', 'voc').
+        """
         total_objects = len(df)
         total_annotations = df[ImageStatsKeys.im_path].nunique()
         objects_per_image = df.groupby(ImageStatsKeys.im_path).size()

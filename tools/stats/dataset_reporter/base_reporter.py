@@ -11,10 +11,24 @@ from logger.logger import LoggerConfigurator
 
 
 class BaseDatasetReporter(ABC):
+    """
+    Abstract base class for dataset reporting and visualization.
 
+    This class provides a shared interface and utility methods for creating
+    technical reports. It handles console output formatting, shared logging,
+    and calculation of dataset health metrics such as 'sweet spots'
+    (statistical ranges free of outliers).
+    """
     line: str = "=" * 75
 
     def __init__(self, settings: AppSettings):
+        """
+        Initializes the reporter with global settings and logging.
+
+        Args:
+            settings (AppSettings): Global configuration containing paths,
+                log levels, and report schemas.
+        """
         self.settings: AppSettings = settings
         self.log_path: Path = settings.log_path
         log_level = settings.log_level
@@ -30,14 +44,44 @@ class BaseDatasetReporter(ABC):
 
     @abstractmethod
     def show_console_report(self, df: pd.DataFrame, target_format: str) -> None:
+        """
+        Prints a detailed technical report to the console.
+
+        Args:
+            df (pd.DataFrame): The feature matrix of the dataset.
+            target_format (str): Annotation format identifier (e.g., 'yolo').
+        """
         pass
 
     @abstractmethod
     def generate_visual_report(self, df: pd.DataFrame, destination: Union[Path, str, PdfPages], features: List[str]) -> None:
+        """
+        Generates visual analytics (plots, heatmaps, manifolds).
+
+        Args:
+            df (pd.DataFrame): The feature matrix of the dataset.
+            destination (Union[Path, str, PdfPages]): Output target for the visual assets.
+            features (List[str]): Numeric columns used for visual correlation and manifold analysis.
+        """
         pass
 
 
     def _render_section(self, df: Union[pd.DataFrame, pd.Series], section: dict, total_objects: int) -> List[str]:
+        """
+        Formats a specific data category (numeric or binary) for the report text.
+
+        This method calculates statistical summaries (mean, median, std) for numeric
+        columns and identifies 'sweet spots' using the Interquartile Range (IQR) method.
+        For binary columns, it calculates frequency and percentage.
+
+        Args:
+            df (Union[pd.DataFrame, pd.Series]): Data slice for a specific class or dataset.
+            section (dict): Configuration dictionary defining the title, columns, and type.
+            total_objects (int): Total count used for calculating percentages in binary sections.
+
+        Returns:
+            List[str]: A list of formatted strings ready for console or text file output.
+        """
         title = section["title"]
         cols = [col for col in section["columns"] if col in df.columns]
 
@@ -80,10 +124,20 @@ class BaseDatasetReporter(ABC):
 
     @property
     def report_path(self) -> Path:
+        """Path: The directory where generated reports are stored."""
         return self._report_path
 
     @report_path.setter
     def report_path(self, value: Union[Path, str]):
+        """
+         Sets and validates the reporting output directory.
+
+         Args:
+             value (Union[Path, str]): Path to the report folder.
+
+         Raises:
+             TypeError: If the value is not a string or a Path object.
+         """
         if not isinstance(value, Path):
             try:
                 value = Path(value)

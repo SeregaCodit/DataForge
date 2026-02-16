@@ -220,6 +220,7 @@ class BaseStats(ABC):
                 df_final = self.compute_umap_coords(df=df_final, features=features)
             if files_for_task or (len(df_cached) != len(df_final)):
                 self.cache_io.save(df_final, cache_file)
+                self.logger.info(f"Cache updated at {cache_file} with {len(df_final)} records")
 
         return df_final
 
