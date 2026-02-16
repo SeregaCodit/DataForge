@@ -1,13 +1,14 @@
 import json
 import multiprocessing
 
-from typing import Union, Tuple, Optional, List
+from typing import Union, Tuple, Optional, List, Dict, Any
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
 from const_utils.copmarer import Constants
+from const_utils.stats_constansts import ImageStatsKeys
 from logger.log_level_mapping import LevelMapping
 
 
@@ -30,7 +31,7 @@ class AppSettings(BaseSettings):
         step_sec (float): Time interval in seconds for video slicing.
         log_path (Path): Directory where log files are stored.
         log_level (str): Verbosity level of the logger (e.g., INFO, DEBUG).
-        filetype (str): The category of files being processed (e.g., image).
+        datatype (str): The category of files being processed (e.g., image).
         method (str): The algorithm name for hashing or comparison.
         hash_threshold (int): Distance threshold for identifying duplicates (0-100).
         confirm_choice (tuple): Keywords used to confirm interactive deletion.
@@ -40,7 +41,7 @@ class AppSettings(BaseSettings):
         cache_name (Optional[Path]): Custom name for the cache file.
         a_suffix (Tuple[str, ...]): File patterns specific to annotations.
         a_source (Optional[Path]): Directory where annotation files are located.
-        destination_type (Optional[str]): Target format for annotation conversion.
+        destination_type (Optional[str]): Target format for annotations.
         extensions (Tuple[str, ...]): Supported image file extensions.
     """
     max_percentage: int = 100
@@ -58,10 +59,10 @@ class AppSettings(BaseSettings):
     step_sec: float = Field(default=1.0, ge=0.1)
     log_path: Path = Field(default=Path("./log"))
     log_level: str = Field(default=LevelMapping.info)
-    filetype: str = Field(default=Constants.image)
+    datatype: str = Field(default=Constants.image)
     method: str = Field(default=Constants.dhash)
     hash_threshold: int = Field(default=10, ge=0, le=100)
-    confirm_choice: tuple = Field(default=("delete",))
+    confirm_choice: tuple = Field(default=("yes",))
     core_size: int = Field(default=8, ge=8)
     n_jobs: int = Field(default=2, ge=1, le=multiprocessing.cpu_count())
     cache_file_path: Path = Field(default=Path("./cache"))
@@ -70,6 +71,55 @@ class AppSettings(BaseSettings):
     a_source: Optional[Path] = Field(default=None)
     destination_type: Optional[str] = Field(default=None)
     extensions: Tuple[str, ...] = Field(default=(".jpg", ".jpeg,", ".png"))
+    margin_threshold: int = Field(default=5, ge=0, le=100)
+    report_path: Path = Field(default=Path("./reports"))
+    img_dataset_report_schema: List[Dict[str, Any]] = Field(default=[
+        {
+            "title": "GEOMETRY",
+            "type": "numeric",
+            "columns": [
+                ImageStatsKeys.object_area,
+                ImageStatsKeys.object_relative_area,
+                ImageStatsKeys.object_width,
+                ImageStatsKeys.object_height,
+                ImageStatsKeys.object_aspect_ratio
+            ]
+        },
+        {
+            "title": "SPATIAL BIAS",
+            "type": "binary",
+            "columns": [
+                ImageStatsKeys.object_in_center,
+                ImageStatsKeys.object_in_top_side,
+                ImageStatsKeys.object_in_bottom_side,
+                ImageStatsKeys.object_in_left_side,
+                ImageStatsKeys.object_in_right_side,
+                ImageStatsKeys.object_in_left_top,
+                ImageStatsKeys.object_in_right_top,
+                ImageStatsKeys.object_in_left_bottom,
+                ImageStatsKeys.object_in_right_bottom
+            ]
+        },
+        {
+            "title": "TRUNCATION",
+            "type": "binary",
+            "columns": [
+                ImageStatsKeys.truncated_top,
+                ImageStatsKeys.truncated_bottom,
+                ImageStatsKeys.truncated_left,
+                ImageStatsKeys.truncated_right
+            ]
+        },
+        {
+            "title": "IMAGE QUALITY",
+            "type": "numeric",
+            "columns": [
+                ImageStatsKeys.im_brightness,
+                ImageStatsKeys.im_contrast,
+                ImageStatsKeys.im_blur_score
+            ]
+        }
+    ])
 
 
     @field_validator('core_size')
@@ -92,7 +142,7 @@ class AppSettings(BaseSettings):
         return value
 
 
-    @field_validator("log_path", "cache_file_path", "a_source", mode='before')
+    @field_validator("report_path", "log_path", "cache_file_path", "a_source", mode='before')
     @classmethod
     def ensure_path(cls, value: Union[str, Path]) -> Path:
         """

@@ -80,7 +80,7 @@ class FileOperation(ABC):
             current_pattern_files = source_directory.glob(f"*{p}*")
             files.update(current_pattern_files)
 
-        files_for_task = tuple(files)
+        files_for_task = tuple(file.resolve() for file in files)
         self.logger.debug(f"Total files_for_task: {len(files_for_task)}")
         return files_for_task
 

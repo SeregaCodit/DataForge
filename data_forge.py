@@ -11,6 +11,7 @@ from file_operations.delete import DeleteOperation
 from file_operations.move import MoveOperation
 from file_operations.slice import SliceOperation
 from file_operations.clean_annotations import CleanAnnotationsOperation
+from file_operations.stats_operation import StatsOperation
 
 
 class DataForge:
@@ -44,7 +45,8 @@ class DataForge:
             Commands.delete: DeleteOperation,
             Commands.dedup: DedupOperation,
             Commands.clean_annotations: CleanAnnotationsOperation,
-            Commands.convert_annotations: ConvertAnnotationsOperation
+            Commands.convert_annotations: ConvertAnnotationsOperation,
+            Commands.stats: StatsOperation
         }
         self.settings = AppSettings.load_config(Constants.config_file)
         self._setup_commands()

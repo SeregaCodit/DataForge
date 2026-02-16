@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Dict
 
 
 class BaseReader(ABC):
@@ -15,7 +16,7 @@ class BaseReader(ABC):
         pass
 
     @abstractmethod
-    def read(self, file_path: Path) -> dict:
+    def read(self, file_path: Path) -> Dict[str, str]:
         """
         Reads an annotation file and converts its content into a dictionary.
 

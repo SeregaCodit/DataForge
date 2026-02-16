@@ -6,6 +6,7 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
 import numpy as np
+import pandas as pd
 
 from const_utils.default_values import AppSettings
 from logger.logger import LoggerConfigurator
@@ -131,6 +132,18 @@ class BaseHasher(ABC):
         return hashes
 
 
+    @staticmethod
+    def _df_to_hash_map(df: pd.DataFrame) -> Dict[Path, np.ndarray]:
+        """Internal helper: Converts Parquet DataFrame back to Hashing format."""
+        if df.empty:
+            return {}
+        data = {
+            Path(row['path']): np.array(row['hash'], dtype=bool)
+            for _, row in df.iterrows()
+        }
+        return data
+
+
     def get_hashmap(self, image_paths: Tuple[Path]) -> Dict[Path, np.ndarray]:
         """
         Orchestrates the process of obtaining hashes for the entire directory.
@@ -150,14 +163,17 @@ class BaseHasher(ABC):
         image_count = len(image_paths)
         filename = self.cache_io.generate_cache_filename(
             image_paths[0].parent.resolve(),
+            cache_name=self.settings.cache_name,
             hash_type=self.hash_type,
             core_size=self.core_size,
-            cache_name=self.settings.cache_name
+
         )
 
         cache_file_name = self.settings.cache_file_path / filename
         cache_file_name.parent.mkdir(parents=True, exist_ok=True)
-        hash_map = self.cache_io.load(cache_file_name)
+        df = self.cache_io.load(cache_file_name)
+
+        hash_map  = self._df_to_hash_map(df)
 
         if hash_map:
             is_valid, valid_hash_map = self.validate_hash_map(image_paths, hash_map)

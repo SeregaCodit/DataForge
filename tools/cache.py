@@ -1,6 +1,6 @@
 import hashlib
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Union, Any
 import numpy as np
 import pandas as pd
 
@@ -10,14 +10,26 @@ from logger.logger_protocol import LoggerProtocol
 
 
 class CacheIO:
-    SUFFIX = ".parquet"
-    def __init__(self, settings: AppSettings):
-        """Initializes the CacheIO class.
+    """
+    Handles high-performance data persistence using Apache Parquet.
 
-        This class helps to save and load cache files. It makes data loading faster.
+    This class provides methods to save and load complex data structures like
+    image hash maps or pandas DataFrames. It optimizes I/O performance
+    and ensures data integrity across different operations.
+
+    Attributes:
+        SUFFIX (str): The standard file extension for cache files (.parquet).
+        settings (AppSettings): Global configuration instance.
+        logger (logging.Logger): Logger instance for tracking I/O operations.
+    """
+    SUFFIX = ".parquet"
+
+    def __init__(self, settings: AppSettings):
+        """
+        Initializes CacheIO with the provided application settings.
 
         Args:
-            settings (AppSettings): The application settings for logging and paths.
+            settings (AppSettings): Application configuration for paths and logging.
         """
         self.settings = settings
         self.logger = LoggerConfigurator.setup(
@@ -27,88 +39,101 @@ class CacheIO:
         )
 
 
-    def load(self: LoggerProtocol, cache_file: Path) -> Dict[Path, np.ndarray]:
-        """Loads data from a cache file.
-
-        It reads a parquet file and converts it into a dictionary of hashes.
+    def load(self: LoggerProtocol, cache_file: Path) -> pd.DataFrame:
+        """
+        Loads data from a parquet cache file into a DataFrame.
 
         Args:
-            cache_file (Path): The path to the cache file.
+            cache_file (Path): The path to the .parquet file.
 
         Returns:
-            Dict[Path, np.ndarray]: A dictionary where keys are file paths and values are hashes.
-                Returns an empty dictionary if the file does not exist or is broken.
+            pd.DataFrame: The loaded data or an empty DataFrame if the file
+                is missing or corrupted.
         """
         if not cache_file.exists():
             self.logger.warning(f"Cache file {cache_file} does not exist")
-            return {}
+            return pd.DataFrame()
 
         try:
             self.logger.info(f"Loading cache file {cache_file}")
             df = pd.read_parquet(cache_file)
-            data = {
-                Path(row['path']): np.array(row['hash'], dtype=bool)
-                for _, row in df.iterrows()
-            }
-            return data
-        except EOFError:
-            self.logger.warning(f"Cache file {cache_file} is damaged. Deleting cache file")
-            return {}
+
+            return df
+        except Exception as e:
+            self.logger.error(f"Cache file {cache_file.name} is corrupted: {e}. Deleting.")
+            cache_file.unlink(missing_ok=True)
+            return pd.DataFrame()
 
 
-    def save(self: LoggerProtocol, hash_map: Dict[Path, np.ndarray], cache_file: Path) -> None:
-        """Saves a hash map to a cache file.
-
-        It converts the dictionary into a parquet file for later use.
+    def save(self: LoggerProtocol, data_map: Union[Dict[Path, np.ndarray], pd.DataFrame], cache_file: Path) -> None:
+        """
+        Saves a dictionary of hashes or a pandas DataFrame to a parquet file.
 
         Args:
-            hash_map (Dict[Path, np.ndarray]): The dictionary of hashes to save.
-            cache_file (Path): The path where the cache file will be saved.
+            data_map (Union[Dict[Path, np.ndarray], pd.DataFrame]): Data to store.
+            cache_file (Path): Target path for the cache file.
+
+        Raises:
+            TypeError: If the data_map is not a dictionary or a DataFrame.
         """
-        if not hash_map:
-            self.logger.warning("Hash map is empty, skipping saving cache file")
-            return
+        empty_msg = "data_map is empty, skipping saving cache data"
 
-        cache_file.parent.mkdir(parents=True, exist_ok=True)
-        self.logger.info(f"Saving {len(hash_map)} hashes to {cache_file.name}")
-
-        try:
+        if isinstance(data_map, dict):
+            if not data_map:
+                self.logger.warning(empty_msg)
+                return
             data = [
                 {'path': str(p), 'hash': h.tolist()}
-                for p, h in hash_map.items()
+                for p, h in data_map.items()
             ]
             df = pd.DataFrame(data)
+
+        elif isinstance(data_map, pd.DataFrame):
+            if data_map.empty:
+                self.logger.warning(empty_msg)
+                return
+            df = data_map
+        else:
+            msg = f"data_map must be either a dictionary or a DataFrame, got {type(data_map)}"
+            self.logger.warning(msg)
+            raise TypeError(msg)
+
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        self.logger.info(f"Saving {len(data_map)} hashes to {cache_file.name}")
+
+        try:
             df.to_parquet(cache_file, engine="pyarrow", compression="snappy", index=False)
-            self.logger.info(f"Cache saved successfully.")
+            self.logger.info(f"Cache saved successfully to {cache_file}.")
         except Exception as e:
             self.logger.error(f"Critical error saving cache: {e}")
 
 
     @classmethod
-    def generate_cache_filename(cls, source_path: Path, hash_type: str, core_size: int, cache_name: Optional[Path]) -> str:
-        """Creates a unique name for the cache file.
-
-        The name is based on the folder path, hash type, and size.
+    def generate_cache_filename(cls, source_path: Path, cache_name: Optional[Union[str, Path]], **kwargs: Any) -> str:
+        """
+        Generates a unique, versioned filename for the cache.
 
         Args:
-            source_path (Path): The folder path being processed.
-            hash_type (str): The type of hash used (e.g., 'dhash').
-            core_size (int): The size of the hash.
-            cache_name (Optional[Path]): A custom name for the cache file, if provided.
+            source_path (Path): The directory path being processed.
+            cache_name (Optional[Union[str, Path]]): A custom name for the file.
+            **kwargs (dict): Key-value pairs to include in the versioning (e.g., core_size=16).
 
         Returns:
-            str: The generated filename for the cache.
+            str: A stable and unique filename string.
         """
-        suffix = f"{hash_type}_s{core_size}{cls.SUFFIX}"
+        param_suffix = "".join([f"_{key}_{value}" for key, value in kwargs.items()])
+        full_suffix = f"{param_suffix}{cls.SUFFIX}"
+
         if cache_name is None:
+
             abs_path = str(source_path.resolve())
             path_hash = hashlib.md5(abs_path.encode('utf-8')).hexdigest()
             folder_name = str(source_path.name.replace(' ', '_').strip("."))[:30]
-            return f"cache_{path_hash}_d{folder_name}{suffix}"
+            return f"cache_{path_hash}_{folder_name}{full_suffix}"
         else:
             cache_name = str(cache_name).replace(" ", "_").strip(".")
             if cache_name.endswith(cls.SUFFIX):
                 cache_name = cache_name[:-len(cls.SUFFIX)]
 
-            cache_name = f"{cache_name}_{suffix}"
+            cache_name = f"{cache_name}_{full_suffix}"
             return cache_name

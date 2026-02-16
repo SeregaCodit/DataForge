@@ -1,0 +1,26 @@
+from dataclasses import dataclass
+
+@dataclass
+class XMLNames:
+    """Constants for XML tag and attribute names."""
+    annotation: str = "annotation"
+    folder: str = "folder"
+    filename: str = "filename"
+    path: str = "path"
+    source: str = "source"
+    database: str = "database"
+    size: str = "size"
+    width: str = "width"
+    height: str = "height"
+    depth: str = "depth"
+    segmented: str = "segmented"
+    object: str = "object"
+    name: str = "name"
+    pose: str = "pose"
+    truncated: str = "truncated"
+    difficult: str = "difficult"
+    bndbox: str = "bndbox"
+    xmin: str = "xmin"
+    ymin: str = "ymin"
+    xmax: str = "xmax"
+    ymax: str = "ymax"

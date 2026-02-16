@@ -27,7 +27,7 @@ class LoggerConfigurator:
             'loggers': {
                 '': {  # root logger
                     'handlers': ['console'],
-                    'level': LevelMapping.debug,
+                    'level': LevelMapping.info,
                     'propagate': True
                 },
             }

@@ -28,10 +28,12 @@ nav:
       - dedup: operations/deduplicate.md
       - clean-annotations: operations/clean_annotations.md
       - convert-annotations: operations/convert_annotations.md
+      - stats: operations/stats.md
   - API Reference:
       - Main: api/data_forge.md
       - Image Comparer: api/img_comparer.md
       - Video slicer: api/video_slicer.md
+      - CacheIO: api/cache_io.md
       - Hasher:
           - Base Hasher: api/base_hasher.md
           - DHash: api/dhash.md
@@ -49,7 +51,16 @@ nav:
           - TXT writer: api/yolo_writer.md
       - Mixins:
           - FileRemoverMixin: api/file_remover.md
-      - CacheIO: api/cache_io.md
+      - Stats:
+          - Feature extractor: api/feature_extractor.md
+          - Image Analyzer: api/image_analyzer.md
+          - Outlier Detector: api/outlier_detector.md
+          - Base Stats: api/base_stats.md
+          - Yolo Stats: api/yolo_stats.md
+          - VOC Stats: api/voc_stats.md
+          - Reporter:
+                - Base Reporter: api/base_reporter.md
+                - Image Dataset Reporter: api/image_reporter.md
   - CLI:
       - CLI launching: cli/data_forge.md
       - Default Settings: cli/default_values.md

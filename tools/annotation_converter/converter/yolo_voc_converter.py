@@ -1,11 +1,11 @@
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple, Union, Optional
 
-import cv2
 import xmltodict
 
+from services.convertion_utils import to_voc_dict
 from tools.annotation_converter.converter.base import BaseConverter
 from tools.annotation_converter.reader.base import BaseReader
 from tools.annotation_converter.writer.base import BaseWriter
@@ -20,6 +20,7 @@ class YoloVocConverter(BaseConverter):
 
     Attributes:
         CLASSES_FILE (str): Standard name for the file containing class names.
+        _worker_image_map (dict): A class-level dictionary used to store image paths for worker processes.
     """
     CLASSES_FILE = "classes.txt"
     _worker_image_map = {}
@@ -41,8 +42,8 @@ class YoloVocConverter(BaseConverter):
         """
         super().__init__(source_format, dest_format, **kwargs)
         self.extensions: Tuple[str, ...] = extensions
-        self.labels_path: Path = kwargs.get("labels_path", None)
-        self.img_path: Path = kwargs.get("img_path", None)
+        self.labels_path: Optional[Path] = kwargs.get("labels_path", None)
+        self.img_path: Optional[Path] = kwargs.get("img_path", None)
         self.objects: list = list()
         self.object_mapping: Dict[str, str] = dict()
 
@@ -88,66 +89,17 @@ class YoloVocConverter(BaseConverter):
         if not yolo_annotations:
             return False
 
-        objects = list()
-        # ----- correspond image information -----
         correspond_img_str = YoloVocConverter._worker_image_map.get(file_path.stem)
 
         if correspond_img_str is None:
             return False
 
-        img_height, img_width, im_depth = cv2.imread(correspond_img_str).shape
-        correspond_img = Path(correspond_img_str)
-        im_path = correspond_img.resolve()
-        im_dir = correspond_img.parent.stem
-        im_name = correspond_img.name
+        converted_dict = to_voc_dict(
+            annotations=yolo_annotations,
+            class_mapping=class_mapping,
+            correspond_img=correspond_img_str
+        )
 
-        for annotation in yolo_annotations:
-            class_id, *coords = annotation.split(" ")
-            class_name = class_mapping.get(class_id, f"object_{class_id}")
-            obj_xcenter, obj_ycenter, obj_width, obj_height = map(float, coords)
-            # ----- bbox transformation -----
-            xmin = round(((obj_xcenter - obj_width / 2) * img_width))
-            ymin = round((obj_ycenter - obj_height / 2) * img_height)
-            xmax = round((obj_xcenter + obj_width / 2) * img_width)
-            ymax= round((obj_ycenter + obj_height / 2) * img_height)
-            voc_object = {
-                "name": class_name,
-                "pose": "Unspecified",
-                "truncated": int(
-                    any([
-                        xmin <= 0,
-                        ymin <= 0,
-                        xmax >= img_width,
-                        ymax >= img_height,
-                    ])
-                ),
-                "difficult": 0,
-                "bndbox":{
-                    "xmin": xmin,
-                    "ymin": ymin,
-                    "xmax": xmax,
-                    "ymax": ymax
-                }
-            }
-            objects.append(voc_object)
-
-        converted_dict = {
-            "annotation": {
-                "folder": im_dir,
-                "filename": im_name,
-                "path": im_path,
-                "source": {
-                    "database": "Unknown"
-                },
-                "size": {
-                    "width": img_width,
-                    "height": img_height,
-                    "depth": im_depth
-                },
-                "segmented": 0,
-                "object": objects if len(objects) > 1 else objects[0]
-            }
-        }
         try:
             xml = xmltodict.unparse(converted_dict, pretty=True)
             annotation_path = Path(destination_path / f"{file_path.stem}{suffix}")

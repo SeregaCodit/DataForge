@@ -35,7 +35,7 @@ class DedupOperation(FileOperation, FileRemoverMixin):
             Constants.image: ImageComparer
         }
 
-        self.filetype = kwargs.get("filetype", self.settings.filetype)
+        self.filetype = kwargs.get("filetype", self.settings.datatype)
         self.method = kwargs.get("method", self.settings.method)
         self.remove = kwargs.get("remove", self.settings.remove)
         self.comparer: ImageComparer = self.mapping[self.filetype](self.settings)
@@ -55,9 +55,9 @@ class DedupOperation(FileOperation, FileRemoverMixin):
             default=settings.hash_threshold
         )
         parser.add_argument(
-            Arguments.filetype,
-            help=HelpStrings.filetype,
-            default=settings.filetype
+            Arguments.datatype,
+            help=HelpStrings.datatype,
+            default=settings.datatype
         )
         parser.add_argument(
             Arguments.method, Arguments.m,
@@ -112,6 +112,6 @@ class DedupOperation(FileOperation, FileRemoverMixin):
             bool: True if deletion is confirmed, False otherwise.
         """
         if not self.remove:
-            user_choice = input("for deleting founded duplicate files type 'delete': ")
+            user_choice = input("for deleting founded duplicate files type 'yes': ")
             return user_choice.lower() in self.settings.confirm_choice
         return True

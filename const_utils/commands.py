@@ -9,3 +9,4 @@ class Commands:
     dedup: str = "dedup"
     clean_annotations: str = "clean-annotations"
     convert_annotations: str = "convert-annotations"
+    stats: str = "stats"

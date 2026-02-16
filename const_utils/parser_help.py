@@ -18,7 +18,7 @@ class HelpStrings:
     remove: str = "remove files after processing"
     log_path: str = "path to log directory"
     log_level: str = f"A level of logging matches mapping: {str(LevelMapping.mapping())}"
-    filetype: str = "Type of file. Currently this parameter only supports 'image'"
+    datatype: str = "Type of data. Currently this parameter only supports 'image'"
     method: str = "Default: dhash. A method of comparing images. It's can be ['phash, dhash, ahash, cnn]"
     threshold: str = ("A minimal difference between files that means the files"
                       f" have a different information. Using Hemming distance for *hash methods")
@@ -37,3 +37,6 @@ class HelpStrings:
     img_path: str = "Path to dataset images directory"
     extensions: str = ("A tuple of file extensions that will be used as pattern for building file whitelists for "
                        "converting from yolo to other formats")
+    margin: str = ("A threshold value of margin from any image border. If any side of object bbox cloaser that this"
+                   "value to image boarder - object will be defined as truncated")
+    report_path: str = "A path to directory where reports will be stored"

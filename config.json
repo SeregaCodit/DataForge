@@ -7,14 +7,67 @@
   "step_sec": 5,
   "log_path": "./log",
   "log_level": "INFO",
-  "filetype": "image",
+  "report_path": "./reports",
+  "datatype": "image",
   "method": "dhash",
   "hash_threshold": 10,
-  "confirm_choice": ["delete", "вудуеу", "yes", "y", "true", "t", "1"],
+  "confirm_choice": [
+    "yes"
+  ],
   "core_size": 16,
-  "n_jobs":  20,
+  "n_jobs": 20,
   "cache_file_path": "./cache",
   "cache_name": null,
-  "a_suffix": [".xml"],
-  "a_source": null
+  "a_suffix": [
+    ".xml"
+  ],
+  "a_source": null,
+  "img_dataset_report_schema": [
+    {
+      "title": "GEOMETRY",
+      "type": "numeric",
+      "columns": [
+        "object_area",
+        "object_relative_area",
+        "object_width",
+        "object_height",
+        "object_aspect_ratio"
+      ]
+    },
+    {
+      "title": "IMAGE QUALITY",
+      "type": "numeric",
+      "columns": [
+        "im_brightness",
+        "im_contrast",
+        "im_blur_score"
+      ]
+    },
+    {
+      "title": "SPATIAL BIAS",
+      "type": "binary",
+      "columns": [
+        "object_in_center",
+        "object_in_top_side",
+        "object_in_bottom_side",
+        "object_in_left_side",
+        "object_in_right_side",
+        "object_in_left_top",
+        "object_in_right_top",
+        "object_in_left_bottom",
+        "object_in_right_bottom"
+      ]
+    },
+    {
+      "title": "TRUNCATION",
+      "type": "binary",
+      "columns": [
+        "truncated_top",
+        "truncated_bottom",
+        "truncated_left",
+        "truncated_right"
+      ]
+    }
+
+  ]
 }

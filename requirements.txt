@@ -49,3 +49,7 @@ typing_extensions==4.15.0
 urllib3==2.6.3
 watchdog==6.0.0
 xmltodict==1.0.2
+
+seaborn
+scikit-learn
+umap-learn
