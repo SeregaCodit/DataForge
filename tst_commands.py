@@ -60,6 +60,7 @@ MAPPING = {
         "./media/annotated/",
         "-p", ".xml",
         "--destination-type", "voc",
+        # "--cache_name", "Pascal_VOC_2012_v1-raw.voc"
     ]
 }
 
