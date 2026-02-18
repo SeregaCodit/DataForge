@@ -60,14 +60,12 @@ MAPPING = {
         "./media/annotated/",
         "-p", ".xml",
         "--destination-type", "voc",
-        # "--cache_name", "Pascal_VOC_2012_v1-raw.voc"
     ]
 }
 
 if __name__ == "__main__":
     MAPPING[Commands.dedup].append(Arguments.core_size)
     MAPPING[Commands.dedup].append("16")
-
 
     sys.argv = MAPPING[Commands.stats]
     app = DataForge()
