@@ -71,51 +71,75 @@ class FeatureExtractor:
                 area = width * height
                 relative_area = area / im_area
 
-                # if bbox corners in all four image quarters
-                in_center = 1 if all([
-                    xmin <= img_center_x <= xmax,
-                    ymin <= img_center_y <= ymax
-                ]) else 0
-                # if object on im_center_y coord but has right offset
-                in_right_side = 1 if all([
-                    ymin < img_center_y < ymax,
-                    xmin > img_center_x
-                ]) else 0
-                # if object on im_center_y coord but has left offset
-                in_left_side = 1 if all([
-                    ymin < img_center_y < ymax,
-                    xmax < img_center_x
-                ]) else 0
-                # if object on im_center_x coord but has top offset
-                in_top_side = 1 if all([
-                    xmin < img_center_x < xmax,
-                    ymax < img_center_y
-                ]) else 0
-                # if object on im_center_x coord but has bottom offset
-                in_bottom_side = 1 if all([
-                    xmin < img_center_x < xmax,
-                    ymin > img_center_y
-                ]) else 0
-                # object absolutely in top left quarter
-                in_left_top = 1 if all([
-                    xmax < img_center_x,
-                    ymax < img_center_y
-                ]) else 0
-                # object absolutely in top right quarter
-                in_right_top = 1 if all([
-                    xmin > img_center_x,
-                    ymax > img_center_y
-                ]) else 0
-                # object absolutely in left bottom quarter
-                in_left_bottom = 1 if all([
-                    xmax < img_center_x,
-                    ymin > img_center_y
-                ]) else 0
-                # object absolutely in right bottom quarter
-                in_right_bottom = 1 if all([
-                    xmin > img_center_x,
-                    ymin > img_center_y
-                ]) else 0
+                # # if bbox corners in all four image quarters
+                # in_center = 1 if all([
+                #     xmin <= img_center_x <= xmax,
+                #     ymin <= img_center_y <= ymax
+                # ]) else 0
+                # # if object on im_center_y coord but has right offset
+                # in_right_side = 1 if all([
+                #     ymin < img_center_y < ymax,
+                #     xmin > img_center_x
+                # ]) else 0
+                # # if object on im_center_y coord but has left offset
+                # in_left_side = 1 if all([
+                #     ymin < img_center_y < ymax,
+                #     xmax < img_center_x
+                # ]) else 0
+                # # if object on im_center_x coord but has top offset
+                # in_top_side = 1 if all([
+                #     xmin < img_center_x < xmax,
+                #     ymax < img_center_y
+                # ]) else 0
+                # # if object on im_center_x coord but has bottom offset
+                # in_bottom_side = 1 if all([
+                #     xmin < img_center_x < xmax,
+                #     ymin > img_center_y
+                # ]) else 0
+                # # object absolutely in top left quarter
+                # in_left_top = 1 if all([
+                #     xmax < img_center_x,
+                #     ymax < img_center_y
+                # ]) else 0
+                # # object absolutely in top right quarter
+                # in_right_top = 1 if all([
+                #     xmin > img_center_x,
+                #     ymax > img_center_y
+                # ]) else 0
+                # # object absolutely in left bottom quarter
+                # in_left_bottom = 1 if all([
+                #     xmax < img_center_x,
+                #     ymin > img_center_y
+                # ]) else 0
+                # # object absolutely in right bottom quarter
+                # in_right_bottom = 1 if all([
+                #     xmin > img_center_x,
+                #     ymin > img_center_y
+                # ]) else 0
+
+                object_center_x = (xmin + xmax) / 2
+                object_center_y = (ymin + ymax) / 2
+
+                bin_w = im_width / 3
+                bin_h = im_height / 3
+
+                col_idx = int(object_center_x // bin_w)
+                row_idx = int(object_center_y // bin_h)
+
+                col_idx = min(col_idx, 2)
+                row_idx = min(row_idx, 2)
+
+                in_left_top = 1 if (row_idx == 0 and col_idx == 0) else 0
+                in_top_side = 1 if (row_idx == 0 and col_idx == 1) else 0
+                in_right_top = 1 if (row_idx == 0 and col_idx == 2) else 0
+
+                in_left_side = 1 if (row_idx == 1 and col_idx == 0) else 0
+                in_center = 1 if (row_idx == 1 and col_idx == 1) else 0
+                in_right_side = 1 if (row_idx == 1 and col_idx == 2) else 0
+
+                in_left_bottom = 1 if (row_idx == 2 and col_idx == 0) else 0
+                in_bottom_side = 1 if (row_idx == 2 and col_idx == 1) else 0
+                in_right_bottom = 1 if (row_idx == 2 and col_idx == 2) else 0
 
                 truncated_left = 1 if xmin < margin_threshold else 0
                 truncated_right = 1 if xmax > (im_width - margin_threshold) else 0
