@@ -81,6 +81,7 @@ class AppSettings(BaseSettings):
         ImageStatsKeys.has_neighbors,
         ImageStatsKeys.full_size,
         ImageStatsKeys.objects_count,
+        ImageStatsKeys.bbox,
         "umap_x",
         "umap_y"
     ))

@@ -45,9 +45,9 @@ class AugmentOperation(FileOperation):
     def do_task(self):
         cache_file = self.files_for_task[0]
         df = self.augmenter.cache_io.load(cache_file)
+        df = self.augmenter.select_candidates(df)
+        candidates = df["is_candidate"]
 
-        for class_name in df["class_name"].unique():
-            class_df = df[df["class_name"] == class_name]
-            data_gaps = self.augmenter.get_data_gaps(df=df, bins=50)
-            self.logger.info(f"Augmenting {self.settings.core_size}")
+        # data_gaps = self.augmenter.get_data_gaps(df=df, bins=50)
+        self.logger.info(f"Augmenting {self.settings.core_size}")
         print()

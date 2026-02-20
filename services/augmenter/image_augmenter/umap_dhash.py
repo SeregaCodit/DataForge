@@ -14,7 +14,7 @@ from tools.stats.voc_stats import VOCStats
 class UmapDhashAugmenter(ImageAugmenter):
     def __init__(self, settings: AppSettings):
         super().__init__(settings)
-        pass
+        self.consensus_hash = None
 
     def get_data_gaps(self, df: pd.DataFrame, bins: int) -> pd.DataFrame:
         self.logger.info(f"Getting data gaps for class {df['class_name'].unique()[0]}")
@@ -72,8 +72,31 @@ class UmapDhashAugmenter(ImageAugmenter):
         gaps_df[feature_cols] = gap_recipes
         return gaps_df
 
+
+
     def select_candidates(self, df: pd.DataFrame) -> pd.DataFrame:
-        pass
+        df = self.get_unique_objects(df=df)
+        df["is_candidate"] = False
+
+        for class_name in df["class_name"].unique():
+            mask = df["class_name"] == class_name
+            class_scores = df.loc[mask, "uniqueness_score"]
+
+            q1 = class_scores.quantile(0.25)
+            q3 = class_scores.quantile(0.75)
+            iqr = q3 - q1
+
+            upper_bound = q3 + 1.5 * iqr
+
+            df.loc[mask, "is_candidate"] = class_scores > upper_bound
+
+        total_candidates = df["is_candidate"].sum()
+        self.logger.info(f"Selected {total_candidates} candidates")
+        return df
+
+
+
+
 
     def generate_samples(self, df: pd.DataFrame, gaps: List, donors: pd.DataFrame, n_samples: int) -> pd.DataFrame:
         pass
