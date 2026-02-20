@@ -254,27 +254,31 @@ class BaseHasher(ABC):
     @core_size.setter
     def core_size(self, value: Union[Tuple[int, int], int, float, str]) -> None:
         """
-        Sets the core size and updates the bit-based threshold accordingly.
+        Sets the core resolution and triggers a threshold recalculation.
 
         Args:
-            value: The new size value (int, float, str, or tuple).
+            value (Union[Tuple[int, int], int, float, str]): The base size
+                for hashing (e.g., 8). If a tuple is provided, the first
+                positive element is used.
 
         Raises:
-            TypeError: If the value cannot be converted to an integer.
+            TypeError: If the value cannot be converted to a valid integer.
         """
         try:
             if isinstance(value, tuple):
+                # Pick the first positive integer from the tuple
                 new_size = int(value[0]) if value[0] > 0 else int(value[1])
             else:
                 new_size = int(float(value))
 
             self._core_size = new_size
 
+            # Synchronize bit-threshold if percentage was already set
             if hasattr(self, '_threshold_pct'):
                 self._recalculate_threshold_bits(self._threshold_pct)
 
-        except (ValueError, TypeError, IndexError) as e:
-            msg = f"Invalid core_size type: {type(value)}. Using default."
+        except (ValueError, TypeError, IndexError):
+            msg = f"Invalid core_size type: {type(value)}. Please provide a number."
             self.logger.error(msg)
             raise TypeError(msg)
 
@@ -286,23 +290,24 @@ class BaseHasher(ABC):
     @threshold.setter
     def threshold(self, value: Union[float, int, str]) -> None:
         """
-        Sets the threshold as a percentage and converts it into bits.
+        Sets the similarity threshold as a percentage of the total hash length.
 
         Args:
-            value: Minimal percentage difference to consider images as unique.
+            value (Union[float, int, str]): Minimal percentage difference
+                (0-100) required to treat images as unique.
 
         Raises:
-            ValueError: If the percentage is not between 0 and 100.
+            ValueError: If the percentage is outside the [0-100] range.
         """
         try:
             pct_value = float(value)
-        except (ValueError, TypeError) as e:
-            msg = f"Threshold must be a number, got {type(value)}"
+        except (ValueError, TypeError):
+            msg = f"Threshold must be a numeric value, got {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
 
         if not (0 <= pct_value <= self.settings.max_percentage):
-            msg = f"Threshold percentage out of range [0-100]: {pct_value}"
+            msg = f"Threshold percentage must be between 0 and 100. Got: {pct_value}"
             self.logger.error(msg)
             raise ValueError(msg)
 
@@ -311,14 +316,19 @@ class BaseHasher(ABC):
 
     def _recalculate_threshold_bits(self, percentage: float) -> None:
         """
-        Internal helper to convert a percentage threshold into absolute bits.
+        Calculates the absolute bit threshold based on the dual-axis hash length.
+
+        The total bit count for dual-axis dHash is calculated as
+        2 * N * (N + 1), where N is the core_size. This accounts for both
+        horizontal and vertical pixel differences.
 
         Args:
             percentage (float): The threshold percentage (0-100).
         """
-        hash_sqr = self.core_size * self.core_size
-        self._threshold = int(hash_sqr * (percentage / self.settings.max_percentage))
-        self.logger.debug(f"Threshold recalculated: {percentage}% of {hash_sqr} bits = {self._threshold} bits")
+
+        total_bits = 2 * self.core_size  * (self.core_size  + 1)
+        self._threshold = int(total_bits * (percentage / self.settings.max_percentage))
+        self.logger.debug(f"Threshold recalculated: {percentage}% of {total_bits} bits = {self._threshold} bits")
 
     @property
     def n_jobs(self) -> int:

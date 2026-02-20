@@ -36,3 +36,4 @@ class ImageStatsKeys:
     truncated_top: str = "truncated_top"
     truncated_bottom: str = "truncated_bottom"
     outlier_any: str = "outlier_any"
+    bbox: str = "bbox"

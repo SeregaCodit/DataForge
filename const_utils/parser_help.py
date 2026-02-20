@@ -40,3 +40,4 @@ class HelpStrings:
     margin: str = ("A threshold value of margin from any image border. If any side of object bbox cloaser that this"
                    "value to image boarder - object will be defined as truncated")
     report_path: str = "A path to directory where reports will be stored"
+    augment_method: str = "A method of data augmentation. Only 'umap_hash' is supported now"

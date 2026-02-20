@@ -5,6 +5,7 @@ from const_utils.default_values import AppSettings
 from const_utils.parser_help import HelpStrings as hs
 from const_utils.commands import Commands
 from const_utils.arguments import Arguments as arg
+from file_operations.augment import AugmentOperation
 from file_operations.convert_annotations import ConvertAnnotationsOperation
 from file_operations.deduplicate import DedupOperation
 from file_operations.delete import DeleteOperation
@@ -46,7 +47,8 @@ class DataForge:
             Commands.dedup: DedupOperation,
             Commands.clean_annotations: CleanAnnotationsOperation,
             Commands.convert_annotations: ConvertAnnotationsOperation,
-            Commands.stats: StatsOperation
+            Commands.stats: StatsOperation,
+            Commands.augment: AugmentOperation
         }
         self.settings = AppSettings.load_config(Constants.config_file)
         self._setup_commands()

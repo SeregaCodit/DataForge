@@ -29,6 +29,7 @@ nav:
       - clean-annotations: operations/clean_annotations.md
       - convert-annotations: operations/convert_annotations.md
       - stats: operations/stats.md
+      - augment: operations/augment.md
   - API Reference:
       - Main: api/data_forge.md
       - Image Comparer: api/img_comparer.md
@@ -61,6 +62,9 @@ nav:
           - Reporter:
                 - Base Reporter: api/base_reporter.md
                 - Image Dataset Reporter: api/image_reporter.md
+      - Augmenter:
+          - Base Augmenter: api/base_augmenter.md
+          - Image Augmenter: api/image_augmenter.md
   - CLI:
       - CLI launching: cli/data_forge.md
       - Default Settings: cli/default_values.md

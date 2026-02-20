@@ -10,3 +10,4 @@ class Commands:
     clean_annotations: str = "clean-annotations"
     convert_annotations: str = "convert-annotations"
     stats: str = "stats"
+    augment: str = "augment"
