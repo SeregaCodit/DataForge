@@ -17,33 +17,41 @@ class DHash(BaseHasher):
     color or compression.
     """
     @staticmethod
-    def compute_hash(image_path: Path, core_size: int) -> Union[np.ndarray, None]:
+    def compute_hash(image_path: Union[Path, str], core_size: int) -> Union[np.ndarray, None]:
         """
-        Calculates the dHash for a single image.
+        Calculates a dual-axis structural dHash for an image or object crop.
+
+        This method generates a robust bit-signature by analyzing brightness
+        gradients in two directions. It captures both vertical and horizontal
+        structural edges, making it highly effective for identifying unique
+        object silhouettes in a dataset.
 
         The process includes:
-        1. Loading the image in grayscale.
-        2. Resizing it to (core_size + 1, core_size) to allow horizontal
-           pixel comparison.
-        3. Generating a boolean mask where each bit represents whether the
-           left pixel is brighter than the right pixel.
+        1. Loading the image in grayscale mode.
+        2. Resizing to (core_size + 1, core_size + 1) to support dual-axis
+           difference calculation.
+        3. Computing horizontal differences (detects vertical structures).
+        4. Computing vertical differences (detects horizontal structures).
+        5. Concatenating both into a single high-dimensional feature vector.
 
         Args:
-            image_path (Path): The file path to the image.
-            core_size (int): The resolution used for resizing. The resulting
-                hash length will be core_size squared (e.g., 8x8 = 64 bits).
+            image_path (Union[Path, str]): Absolute path to the image file.
+            core_size (int): The base resolution for hashing. For a core_size
+                of 8, the resulting vector length is 144 bits (2 * 8 * 9).
 
         Returns:
-            Union[np.ndarray, None]: A 1D NumPy array of boolean values
-                representing the hash, or None if the image file is
-                invalid or cannot be read.
+            Union[np.ndarray, None]: A 1D boolean NumPy array representing the
+                dual-gradient hash. Returns None if the image cannot be read.
         """
         image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
 
         if image is None:
             return None
 
-        resized_image = cv2.resize(image, (core_size + 1, core_size), interpolation=cv2.INTER_AREA)
-        gradient_difference = resized_image[:, 1:] > resized_image[:, :-1]
+        # Resize to N+1 to allow calculation of N differences in both axes
+        resized_image = cv2.resize(image, (core_size + 1, core_size + 1), interpolation=cv2.INTER_AREA)
 
-        return gradient_difference.flatten()
+        gradient_difference_horizontal = resized_image[:, 1:] > resized_image[:, :-1]
+        gradient_difference_vertical = resized_image[1:, :] > resized_image[:-1, :]
+        full_hash = np.hstack((gradient_difference_horizontal.flatten(), gradient_difference_vertical.flatten()))
+        return full_hash
