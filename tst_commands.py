@@ -1,5 +1,4 @@
 import sys
-from pathlib import Path
 
 from const_utils.arguments import Arguments
 from const_utils.commands import Commands
@@ -60,7 +59,18 @@ MAPPING = {
         "./media/annotated/",
         "-p", ".xml",
         "--destination-type", "voc",
-        # "--cache_name", "Pascal_VOC_2012_v1-raw.voc"
+    ],
+
+    Commands.augment: [
+        "data_forge.py",
+        "augment",
+        "./cache/",
+        "-p", "cache_18f47384632949365f8f90d23e774569_annotated_format_.xml_task_stats.parquet",
+        "--datatype", "image",
+        "--augment_method", "umap_hash",
+        "--core_size", "16",
+        "--n_jobs", "20"
+
     ]
 }
 
@@ -68,7 +78,6 @@ if __name__ == "__main__":
     MAPPING[Commands.dedup].append(Arguments.core_size)
     MAPPING[Commands.dedup].append("16")
 
-
-    sys.argv = MAPPING[Commands.stats]
+    sys.argv = MAPPING[Commands.augment]
     app = DataForge()
     app.execute()

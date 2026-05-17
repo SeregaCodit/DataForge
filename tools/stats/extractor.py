@@ -47,8 +47,6 @@ class FeatureExtractor:
 
             im_depth = int(image_data.get(XMLNames.depth, 0))
             im_area = im_width * im_height
-            img_center_x = im_width / 2
-            img_center_y = im_height / 2
             annotated_objects = data.get(XMLNames.object, [])
 
             if isinstance(annotated_objects, dict):
@@ -70,52 +68,6 @@ class FeatureExtractor:
                 height = ymax - ymin
                 area = width * height
                 relative_area = area / im_area
-
-                # # if bbox corners in all four image quarters
-                # in_center = 1 if all([
-                #     xmin <= img_center_x <= xmax,
-                #     ymin <= img_center_y <= ymax
-                # ]) else 0
-                # # if object on im_center_y coord but has right offset
-                # in_right_side = 1 if all([
-                #     ymin < img_center_y < ymax,
-                #     xmin > img_center_x
-                # ]) else 0
-                # # if object on im_center_y coord but has left offset
-                # in_left_side = 1 if all([
-                #     ymin < img_center_y < ymax,
-                #     xmax < img_center_x
-                # ]) else 0
-                # # if object on im_center_x coord but has top offset
-                # in_top_side = 1 if all([
-                #     xmin < img_center_x < xmax,
-                #     ymax < img_center_y
-                # ]) else 0
-                # # if object on im_center_x coord but has bottom offset
-                # in_bottom_side = 1 if all([
-                #     xmin < img_center_x < xmax,
-                #     ymin > img_center_y
-                # ]) else 0
-                # # object absolutely in top left quarter
-                # in_left_top = 1 if all([
-                #     xmax < img_center_x,
-                #     ymax < img_center_y
-                # ]) else 0
-                # # object absolutely in top right quarter
-                # in_right_top = 1 if all([
-                #     xmin > img_center_x,
-                #     ymax > img_center_y
-                # ]) else 0
-                # # object absolutely in left bottom quarter
-                # in_left_bottom = 1 if all([
-                #     xmax < img_center_x,
-                #     ymin > img_center_y
-                # ]) else 0
-                # # object absolutely in right bottom quarter
-                # in_right_bottom = 1 if all([
-                #     xmin > img_center_x,
-                #     ymin > img_center_y
-                # ]) else 0
 
                 object_center_x = (xmin + xmax) / 2
                 object_center_y = (ymin + ymax) / 2
@@ -163,6 +115,7 @@ class FeatureExtractor:
                     ImageStatsKeys.object_width: width,
                     ImageStatsKeys.object_height: height,
                     ImageStatsKeys.object_aspect_ratio: width / height if height > 0 else 0,
+                    ImageStatsKeys.bbox: bbox,
                     ImageStatsKeys.object_area: area,
                     ImageStatsKeys.object_relative_area: relative_area,
                     ImageStatsKeys.object_in_center: in_center,

@@ -59,7 +59,8 @@ class YoloStats(BaseStats):
             ImageStatsKeys.mtime,
             ImageStatsKeys.has_neighbors,
             ImageStatsKeys.full_size,
-            ImageStatsKeys.objects_count
+            ImageStatsKeys.objects_count,
+            ImageStatsKeys.bbox
         }
 
         numeric_features = [c for c in df.select_dtypes(include=[np.number]).columns

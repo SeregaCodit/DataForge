@@ -59,9 +59,9 @@ def create_temp_img_file(color=(255, 0, 0), quality=100, noise=False):
     return temp_file.name
 
 @pytest.mark.parametrize("input_value, expected_vals", [
-    (0.1, 0),    # int(0.1) * (16*16) = 0
-    (10, 25),    # int((10 / 100 ) * (16*16)) = 25
-    (1, 2),       # int(1 / 100) * (16*16) = 2
+    (0.1, 0),    # int(0.1) * (2 * 16 * (16 + 1)) = 5
+    (10, 54),    # int((10 / 100 ) * 544 = 54
+    (1, 5),       # int(1 / 100) * (544) = 5
 ])
 
 #-----TEST-----
@@ -102,11 +102,11 @@ def test_n_jobs_clamping(hasher, input_value, expected_value):
 
 
 @pytest.mark.parametrize("input_value, expected_val", [
-    (16, 16 * 16),
-    ((10, 25), 10 * 10),
-    (17.5, 17 * 17),
-    ("8", 8 * 8)
-])
+        (16, 2 * 16 * 17),        # 544
+        ((10, 25), 2 * 10 * 11),  # 220
+        (17.5, 2 * 17 * 18),      # 612
+        ("8", 2 * 8 * 9)          # 144
+    ])
 def test_compute_hash_returns_correct_shape(hasher, create_test_image, input_value, expected_val):
     # Arrange
     hasher.core_size = input_value
@@ -147,7 +147,7 @@ def test_threshold_conversion(hasher):
     """Перевірка, що відсоток правильно конвертувався в біти"""
     hasher.core_size = 8
     hasher.threshold = 10
-    assert hasher.threshold == 6
+    assert hasher.threshold == 14
 
 def test_find_duplicates(hasher):
     """
@@ -169,10 +169,11 @@ def test_find_duplicates_outside_percentage(hasher):
     Відрізняються у 10 бітах — це НЕ дублікат.
     """
     hasher.core_size = 8
-    hasher.threshold = 10
-    h1 = np.zeros(64, dtype=bool)
-    h2 = np.zeros(64, dtype=bool)
-    h2[:10] = True  # відстань 10 (більше за поріг 6)
+    hasher.threshold = 10 #
+    shape = 2 * 8 * (8 + 1)
+    h1 = np.zeros(shape, dtype=bool)
+    h2 = np.zeros(shape, dtype=bool)
+    h2[:15] = True  # відстань 10 (більше за поріг 6)
 
     hashmap = {Path("img1.jpg"): h1, Path("img2.jpg"): h2}
 

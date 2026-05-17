@@ -73,6 +73,18 @@ class AppSettings(BaseSettings):
     extensions: Tuple[str, ...] = Field(default=(".jpg", ".jpeg,", ".png"))
     margin_threshold: int = Field(default=5, ge=0, le=100)
     report_path: Path = Field(default=Path("./reports"))
+    augment_method: str = Field(default="umap_hash")
+    image_df_exclude_columns: List[str] = Field(default=(
+        ImageStatsKeys.class_name,
+        ImageStatsKeys.path,
+        ImageStatsKeys.mtime,
+        ImageStatsKeys.has_neighbors,
+        ImageStatsKeys.full_size,
+        ImageStatsKeys.objects_count,
+        ImageStatsKeys.bbox,
+        "umap_x",
+        "umap_y"
+    ))
     img_dataset_report_schema: List[Dict[str, Any]] = Field(default=[
         {
             "title": "GEOMETRY",

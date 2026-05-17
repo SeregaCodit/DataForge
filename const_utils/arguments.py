@@ -35,3 +35,4 @@ class Arguments:
     extensions: str = "--ext"
     margin: str = "--margin"
     report_path: str = "--report_path"
+    augment_method: str = "--augment_method"

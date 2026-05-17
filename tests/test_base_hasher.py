@@ -100,8 +100,8 @@ def test_n_jobs_clamping(hasher):
 def test_threshold_recalculation_on_core_size_change(hasher):
     """Test that changing core_size correctly updates the threshold in bits."""
     hasher.threshold = 10  # 10%
-    hasher.core_size = 8  # 64 bits -> threshold 6
-    assert hasher.threshold == 6
+    hasher.core_size = 8
+    assert hasher.threshold == 14
 
-    hasher.core_size = 16  # 256 bits -> threshold 25
-    assert hasher.threshold == 25
+    hasher.core_size = 16
+    assert hasher.threshold == 54
